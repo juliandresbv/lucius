@@ -15,9 +15,9 @@ export async function wallbitFetch<T>(
 ): Promise<T> {
   const url = `${BASE_URL}${path}`
   const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> ?? {}),
     "X-API-Key": getApiKey(),
     ...(options.method === "POST" ? { "Content-Type": "application/json" } : {}),
-    ...(options.headers as Record<string, string> ?? {}),
   }
 
   const res = await fetch(url, { ...options, headers })
@@ -30,9 +30,10 @@ export async function wallbitFetch<T>(
   if (!res.ok) {
     const body = await res.text().catch(() => "")
     const errorMessages: Record<number, string> = {
-      400: "Insufficient funds",
+      400: "Bad request — validation error or insufficient funds",
       401: "Invalid API key",
       403: "Insufficient permissions or unfunded account",
+      404: "Resource not found",
       412: "KYC incomplete",
       422: "Validation error",
     }
