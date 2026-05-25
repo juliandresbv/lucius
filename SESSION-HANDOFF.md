@@ -1,134 +1,208 @@
 # Lucius — Session Handoff
 **Updated:** 2026-05-24 | **Deadline:** 2026-05-26
-**Next action:** Invoke `superpowers:subagent-driven-development` skill with the implementation plan
+**Next action:** Resume `superpowers:subagent-driven-development` from Task 9
 
 ---
 
 ## What's done
 
-- ✅ Full brainstorming + feasibility validation complete
-- ✅ Design spec approved → `docs/specs/2026-05-23-lucius-design.md`
-- ✅ Wallbit API tested live (see findings below)
-- ✅ Architecture, action layer, Lucius agent, sub-agents, onboarding all designed
-- ✅ **Implementation plan written → `docs/superpowers/plans/2026-05-24-lucius-implementation.md`**
-  - 25 tasks, fully coded, no placeholders
-  - Self-review complete — 2 TypeScript bugs fixed inline
+- ✅ Full brainstorming + feasibility validation
+- ✅ Design spec → `docs/specs/2026-05-23-lucius-design.md`
+- ✅ Implementation plan → `docs/superpowers/plans/2026-05-24-lucius-implementation.md` (25 tasks)
+- ✅ **Task 1:** Project scaffold (package.json, tsconfig, vitest, git init, src/ dirs)
+- ✅ **Task 2:** `src/wallbit/types.ts` — all API interfaces + WallbitError
+- ✅ **Task 3:** `src/wallbit/client.ts` — fetch wrapper + tests (3 passing) — includes fix: header ordering prevents X-API-Key override
+- ✅ **Task 4:** `src/wallbit/api.ts` — typed API wrapper (all endpoints)
+- ✅ **Task 5:** `src/wallbit/fallback-assets.ts` — 10 sectors, ~20 assets
+- ✅ **Task 6:** `src/storage/profile.ts` — loadProfile/saveProfile + tests (5 passing)
+- ✅ **Task 7:** `src/actions/portfolio.ts` — getCheckingBalance, getStockPortfolio, getRoboAdvisorPortfolio (null-safe), getPortfolioProjection
+- ✅ **Task 8:** `src/actions/assets.ts` + `src/tests/assets.test.ts` — searchAssets with fallback, getAssetDetail — 3 tests passing
+
+**Test suite:** 11 tests passing (3 files)
 
 ---
 
-## The product
+## Tasks remaining (17 of 25)
 
-**Lucius** — TypeScript CLI investment advisor with two interfaces sharing one action layer:
-- **CLI mode** — explicit menus (@clack/prompts)
-- **Lucius mode** — conversational Claude agent with tool_use
-
-**Three sub-agents** (chalk terminal cards, shared by both interfaces):
-- **Vantage** — investment recommendations (calls Claude)
-- **Sentinel** — pre-trade review (uses live fees: 0.35%)
-- **Meridian** — long-term projection (7% moderate / 5% conservative / 10% aggressive)
+| Task | File | Status |
+|---|---|---|
+| 9 | `src/actions/trading.ts` + tests | **NEXT** |
+| 10 | `src/actions/history.ts` | pending |
+| 11 | `src/actions/recommendations.ts` | pending |
+| 12 | `src/actions/index.ts` | pending |
+| 13 | `src/display/agents.ts` | pending |
+| 14 | `src/display/portfolio.ts` | pending |
+| 15 | `src/cli/onboarding.ts` | pending |
+| 16 | `src/cli/portfolio.ts` | pending |
+| 17 | `src/cli/outlook.ts` | pending |
+| 18 | `src/cli/recommendations.ts` | pending |
+| 19 | `src/cli/execution.ts` | pending |
+| 20 | `src/cli/menu.ts` | pending |
+| 21 | `src/lucius/system-prompt.ts` | pending |
+| 22 | `src/lucius/tools.ts` | pending |
+| 23 | `src/lucius/agent.ts` | pending |
+| 24 | `src/index.ts` | pending |
+| 25 | Full tests + smoke test | pending |
 
 ---
 
-## Key architectural decisions
+## Current git state
+
+```
+~/Desktop/lucius/
+├── src/
+│   ├── wallbit/
+│   │   ├── types.ts           ✅
+│   │   ├── client.ts          ✅
+│   │   ├── api.ts             ✅
+│   │   └── fallback-assets.ts ✅
+│   ├── storage/
+│   │   └── profile.ts         ✅
+│   ├── actions/
+│   │   ├── portfolio.ts       ✅
+│   │   └── assets.ts          ✅
+│   ├── tests/
+│   │   ├── wallbit-client.test.ts  ✅ (3 tests)
+│   │   ├── profile.test.ts         ✅ (5 tests)
+│   │   └── assets.test.ts          ✅ (3 tests)
+│   ├── display/   (empty)
+│   ├── cli/       (empty)
+│   └── lucius/    (empty)
+├── docs/
+│   ├── specs/2026-05-23-lucius-design.md
+│   └── superpowers/plans/2026-05-24-lucius-implementation.md
+├── package.json, tsconfig.json, vitest.config.ts
+├── .env.example, .gitignore
+└── node_modules/
+```
+
+---
+
+## How to resume
+
+1. Open new session, `cd ~/Desktop/lucius`
+2. Say: **"continue from handoff"**
+3. Invoke `superpowers:subagent-driven-development`
+4. Skip Tasks 1–8 (done). Start from **Task 9** (`src/actions/trading.ts`)
+
+TodoWrite task IDs: Tasks 9–25 correspond to TodoWrite #18–#34. Task #18 is pending.
+
+**NOTE on subagent dispatch:** The worktree isolation for subagents fails because the primary CWD (`/Users/julianberval`) is not a git repo. Implement directly using Write + Bash tools instead of spawning subagents.
+
+---
+
+## Key architectural reminders
 
 1. **Shared action layer** — `src/actions/` called by both CLI and Lucius tools
 2. **Dry-run gate** — `isDryRun()` in `actions/trading.ts`, reads `DRY_RUN` env var
-3. **Asset fallback list** — hardcoded ~20 assets/sector in `src/wallbit/fallback-assets.ts`
-4. **expectedReturn** — auto-derived from `riskTolerance` in `saveProfile()`, never asked
-5. **Fees** — `POST /fees` called by `getSentinelPreview()` before every trade confirmation; fallback to 0.35% if call fails
+3. **Asset fallback** — `searchAssets()` tries live API, falls back to `FALLBACK_ASSETS` on 403/empty
+4. **expectedReturn** — auto-derived from `riskTolerance`, never asked — enforced by `Omit<>` in saveProfile
+5. **Fees** — `POST /fees` called by `getSentinelPreview()` before every trade; fallback 0.35% if fails
 6. **MARKET orders only** — hardcoded `order_type: "MARKET"` in `executeTrade()`
-7. **profile.json** — local file, written by 6-step onboarding wizard
-8. **`Transaction` type** — defined once in `src/wallbit/types.ts`, re-exported from `src/actions/history.ts`
-9. **`FetchResult` interface** — used in `src/cli/recommendations.ts` to avoid TypeScript assignment-before-use on try/catch
+7. **`Transaction` type** — defined in `wallbit/types.ts`, re-exported from `actions/history.ts`
+8. **`FetchResult` interface** — in `cli/recommendations.ts` to avoid TS strict-mode assignment-before-use
+9. **WallbitError header fix** — headers spread order: user headers → X-API-Key → Content-Type (POST)
+10. **vitest mock pattern** — do NOT use `vi.resetModules()` in tests that check `instanceof WallbitError` (causes class identity mismatch); use static imports + `vi.clearAllMocks()` only
 
 ---
 
-## Wallbit API — live test results
+## API keys reminder
 
-| Endpoint | Status |
-|---|---|
-| `GET /balance/checking` | ✅ Works |
-| `GET /balance/stocks` | ✅ Works |
-| `GET /transactions` | ✅ Works |
-| `POST /fees` | ✅ Works — 0.35% LEVEL2, $0 fixed |
-| `GET /rates` | ✅ Works |
-| `GET /assets?category=X` | ⚠️ Returns empty (unfunded account) — fallback covers this |
-| `GET /assets?search=X` | ❌ 403 — **do not use search param** |
-| `GET /assets/{symbol}` | ❌ 403 on unfunded account — fallback covers this |
-| `GET /roboadvisor/balance` | ❌ Needs funded account — null-safe in `getRoboAdvisorPortfolio()` |
-
-**Root cause of 403s:** Unfunded account. Asset data unlocks once account has a deposit.
+All old keys expired. Before running:
+1. Wallbit Dashboard → Settings → API Keys → create **trade** scope key
+2. `cp .env.example .env` → fill `WALLBIT_API_KEY` and `ANTHROPIC_API_KEY`
+3. Test: `curl https://api.wallbit.io/api/public/v1/balance/checking -H "X-API-Key: <key>"`
 
 ---
 
-## API keys status
-
-ALL previously tested keys are expired. User must generate a fresh key:
-- Wallbit Dashboard → Settings → API Keys → create with **trade** scope
-- Copy to `.env` as `WALLBIT_API_KEY`
-
-**Before implementing:**
-1. Generate fresh trade-scoped API key
-2. (Optional but recommended) Fund account (min $10) to unlock `/assets` endpoint
-3. Verify: `curl https://api.wallbit.io/api/public/v1/balance/checking -H "X-API-Key: <new_key>"`
-
----
-
-## Spec + Plan locations
+## Plan location
 
 ```
-docs/specs/2026-05-23-lucius-design.md        ← approved design spec
-docs/superpowers/plans/2026-05-24-lucius-implementation.md  ← implementation plan
+docs/superpowers/plans/2026-05-24-lucius-implementation.md
 ```
+
+Tasks 9–25 are all detailed there with complete code and TDD steps.
 
 ---
 
-## Plan summary (25 tasks)
+## Task 9 spec (next up)
 
-| Task | What it builds |
-|---|---|
-| 1 | Project scaffold (package.json, tsconfig, vitest, .env.example, .gitignore) |
-| 2 | `src/wallbit/types.ts` — all API interfaces + WallbitError |
-| 3 | `src/wallbit/client.ts` — fetch wrapper + tests |
-| 4 | `src/wallbit/api.ts` — one function per endpoint |
-| 5 | `src/wallbit/fallback-assets.ts` — curated ~20 assets/sector |
-| 6 | `src/storage/profile.ts` — read/write profile.json + tests |
-| 7 | `src/actions/portfolio.ts` — balance, holdings, projection |
-| 8 | `src/actions/assets.ts` — search with fallback + tests |
-| 9 | `src/actions/trading.ts` — dry-run gate, Sentinel preview + tests |
-| 10 | `src/actions/history.ts` — transaction history |
-| 11 | `src/actions/recommendations.ts` — Claude Vantage advisor |
-| 12 | `src/actions/index.ts` — barrel exports |
-| 13 | `src/display/agents.ts` — Vantage/Sentinel/Meridian chalk cards |
-| 14 | `src/display/portfolio.ts` — portfolio table renderer |
-| 15 | `src/cli/onboarding.ts` — 6-step @clack wizard |
-| 16 | `src/cli/portfolio.ts` — view portfolio screen |
-| 17 | `src/cli/recommendations.ts` — Vantage → Sentinel → execute flow |
-| 18 | `src/cli/outlook.ts` — long-term outlook (Meridian) |
-| 19 | `src/cli/execution.ts` — move funds screen (Sentinel) |
-| 20 | `src/cli/menu.ts` — main menu loop + history screen |
-| 21 | `src/lucius/system-prompt.ts` — Lucius system prompt builder |
-| 22 | `src/lucius/tools.ts` — Claude tool definitions (9 tools) |
-| 23 | `src/lucius/agent.ts` — conversational loop with tool_use |
-| 24 | `src/index.ts` — entry point |
-| 25 | Full test suite + smoke test |
+**Files:** `src/actions/trading.ts` + `src/tests/trading.test.ts`
+
+Test file uses static imports (NOT dynamic imports + resetModules — see lesson learned in Task 8):
+
+```typescript
+// src/tests/trading.test.ts
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { wallbitApi } from "../wallbit/api.js"
+import { getAssetDetail } from "../actions/assets.js"
+import { getCheckingBalance } from "../actions/portfolio.js"
+import { isDryRun, executeTrade } from "../actions/trading.js"
+
+vi.mock("../wallbit/api.js", () => ({
+  wallbitApi: {
+    getFees: vi.fn(),
+    createTrade: vi.fn(),
+    moveOperation: vi.fn(),
+  },
+}))
+
+vi.mock("../actions/assets.js", () => ({
+  getAssetDetail: vi.fn(),
+}))
+
+vi.mock("../actions/portfolio.js", () => ({
+  getCheckingBalance: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  delete process.env.DRY_RUN
+})
+
+afterEach(() => {
+  delete process.env.DRY_RUN
+})
+
+describe("isDryRun", () => {
+  it("returns false by default", () => {
+    expect(isDryRun()).toBe(false)
+  })
+
+  it("returns true when DRY_RUN=true", () => {
+    process.env.DRY_RUN = "true"
+    expect(isDryRun()).toBe(true)
+  })
+})
+
+describe("executeTrade — dry-run mode", () => {
+  it("returns simulated result without calling API when DRY_RUN=true", async () => {
+    process.env.DRY_RUN = "true"
+    vi.mocked(getAssetDetail).mockResolvedValueOnce({
+      symbol: "AAPL",
+      name: "Apple",
+      price: 213.32,
+      sector: "Technology",
+    })
+
+    const result = await executeTrade("AAPL", "BUY", 200)
+    expect(result.simulated).toBe(true)
+    expect(wallbitApi.createTrade).not.toHaveBeenCalled()
+    if (result.simulated) {
+      expect(result.symbol).toBe("AAPL")
+      expect(result.amount).toBe(200)
+    }
+  })
+})
+```
+
+The `trading.ts` implementation is fully specified in the plan at lines ~1170–1336 (Task 9, Step 3). Commit message: `"feat(actions): trading — isDryRun gate, getSentinelPreview, executeTrade, moveFunds"`.
 
 ---
 
-## Next session — what to do
+## Execution approach (for next session)
 
-1. Open `~/Desktop/lucius/` as working directory
-2. Read `docs/superpowers/plans/2026-05-24-lucius-implementation.md`
-3. Invoke `superpowers:subagent-driven-development` skill
-4. Feed it the plan — it dispatches one subagent per task with review between tasks
-5. Use `DRY_RUN=true` for all testing until account is funded
-
----
-
-## Stack
-
-```
-Node 18+ · TypeScript 5 · tsx (dev) · @clack/prompts · @anthropic-ai/sdk
-native fetch · chalk · dotenv · vitest
-Model: claude-sonnet-4-6
-```
+- Use Write tool + Bash directly (subagent worktree isolation doesn't work here)
+- Run tests after each task that has a test file
+- `DRY_RUN=true` for all testing until account is funded
+- Remaining tasks 10–24 are mostly mechanical (write file → commit); Task 25 is smoke test
