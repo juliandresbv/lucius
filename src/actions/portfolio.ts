@@ -32,7 +32,9 @@ export interface PortfolioProjection {
 
 export async function getCheckingBalance(): Promise<CheckingBalance> {
   const res = await wallbitApi.getCheckingBalance()
-  return { available: res.available, currency: "USD" }
+  // API returns [] when account is unfunded/empty
+  if (Array.isArray(res)) return { available: 0, currency: "USD" }
+  return { available: (res as { available: number }).available ?? 0, currency: "USD" }
 }
 
 export async function getStockPortfolio(): Promise<PortfolioHolding[]> {

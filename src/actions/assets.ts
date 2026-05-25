@@ -25,15 +25,19 @@ export async function searchAssets(
 ): Promise<AssetInfo[]> {
   try {
     const res = await wallbitApi.getAssets({ category, limit })
-    if (res.data && res.data.length > 0) {
-      return res.data.map(mapAsset)
+    // After client envelope unwrap, res is the assets array directly (or has a data array)
+    const items: Asset[] = Array.isArray(res)
+      ? res
+      : (res as { data?: Asset[] }).data ?? []
+    if (items.length > 0) {
+      return items.map(mapAsset)
     }
     // Empty data — fall back to curated list
     return category
       ? getFallbackAssets(category).slice(0, limit)
       : getAllFallbackAssets().slice(0, limit)
   } catch (err) {
-    if (err instanceof WallbitError && (err.code === 403 || err.code === 401)) {
+    if (err instanceof WallbitError && (err.code === 403 || err.code === 401 || err.code === 422)) {
       return category
         ? getFallbackAssets(category).slice(0, limit)
         : getAllFallbackAssets().slice(0, limit)
@@ -57,7 +61,7 @@ export async function getAssetDetail(symbol: string): Promise<AssetDetailInfo> {
       dividends: res.dividends,
     }
   } catch (err) {
-    if (err instanceof WallbitError && (err.code === 403 || err.code === 401)) {
+    if (err instanceof WallbitError && (err.code === 403 || err.code === 401 || err.code === 422)) {
       const fallback = getAllFallbackAssets().find((a) => a.symbol === symbol)
       if (fallback) return { ...fallback }
       throw new Error(`Asset ${symbol} not found in fallback list — check symbol`)

@@ -47,10 +47,20 @@ export const wallbitApi = {
     direction: "BUY" | "SELL"
     amount: number
   }): Promise<FeeResponse> {
-    return wallbitFetch<FeeResponse>("/fees", {
+    // API returns {fee_type, tier, percentage_fee, fixed_fee_usd}
+    // Normalize to our FeeResponse shape
+    const raw = await wallbitFetch<Record<string, unknown>>("/fees", {
       method: "POST",
       body: JSON.stringify(params),
     })
+    const percentageFee = (raw.percentage_fee as number | undefined) ?? (raw.percentage as number | undefined) ?? 0.0035
+    const fixedFee = (raw.fixed_fee_usd as number | undefined) ?? (raw.fixed as number | undefined) ?? 0
+    return {
+      tier: (raw.tier as string) ?? "LEVEL2",
+      percentage: percentageFee,
+      fixed: fixedFee,
+      estimatedFee: params.amount * percentageFee + fixedFee,
+    }
   },
 
   async createTrade(req: TradeRequest): Promise<TradeResponse> {
