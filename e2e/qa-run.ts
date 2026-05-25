@@ -1,5 +1,7 @@
 // e2e/qa-run.ts — end-to-end action layer QA with DRY_RUN=true
+// Uses PROFILE_FILE=profile.test.json so the production profile is never touched.
 import "dotenv/config"
+process.env.PROFILE_FILE = "profile.test.json"
 import chalk from "chalk"
 
 // ── helpers ──────────────────────────────────────────────────────────────────

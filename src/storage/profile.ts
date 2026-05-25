@@ -2,7 +2,10 @@
 import { readFile, writeFile } from "node:fs/promises"
 import { resolve } from "node:path"
 
-const PROFILE_PATH = resolve(process.cwd(), "profile.json")
+const PROFILE_PATH = resolve(
+  process.cwd(),
+  process.env.PROFILE_FILE ?? "profile.json"
+)
 
 export const RETURN_BY_RISK: Record<"conservative" | "moderate" | "aggressive", number> = {
   conservative: 0.05,
