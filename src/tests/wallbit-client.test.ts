@@ -40,7 +40,7 @@ describe("wallbitFetch", () => {
     await expect(wallbitFetch("/balance/checking")).rejects.toMatchObject({
       code: 429,
       retryAfter: 30,
-    } satisfies Partial<WallbitError>)
+    } satisfies Partial<InstanceType<typeof WallbitError>>)
   })
 
   it("sends X-API-Key header on every request", async () => {

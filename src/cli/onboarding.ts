@@ -53,7 +53,6 @@ export async function runOnboarding(): Promise<UserProfile> {
   const budgetStr = await p.text({
     message: "How much would you like to invest per month? (USD)",
     placeholder: "300",
-    hint: "This is your ceiling — Lucius will never recommend more than this per session.",
     validate: (v) => {
       const n = parseFloat(v)
       if (isNaN(n) || n <= 0) return "Must be a positive number"
