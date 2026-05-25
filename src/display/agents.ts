@@ -5,6 +5,14 @@ import type { SentinelPreview } from "../actions/trading.js"
 import type { PortfolioProjection } from "../actions/portfolio.js"
 
 const BOX_WIDTH = 58
+const MAX_CONTENT = BOX_WIDTH - 4  // 54 visible chars between the borders
+
+// Strip ANSI escape codes to get the visible character count
+// eslint-disable-next-line no-control-regex
+const ANSI_RE = /\x1b\[[0-9;]*m/g
+function visibleLen(str: string): number {
+  return str.replace(ANSI_RE, "").length
+}
 
 function boxTop(title: string): string {
   const pad = BOX_WIDTH - title.length - 4
@@ -12,8 +20,14 @@ function boxTop(title: string): string {
 }
 
 function boxLine(text: string): string {
-  const truncated = text.slice(0, BOX_WIDTH - 4)
-  return chalk.dim("  │ ") + truncated.padEnd(BOX_WIDTH - 4) + chalk.dim(" │")
+  // Truncate to visible width if too long (strip colors on overflow — edge case)
+  const content =
+    visibleLen(text) > MAX_CONTENT
+      ? text.replace(ANSI_RE, "").slice(0, MAX_CONTENT)
+      : text
+  // Pad based on visible length so the right border always lines up
+  const padding = " ".repeat(MAX_CONTENT - visibleLen(content))
+  return chalk.dim("  │ ") + content + padding + chalk.dim(" │")
 }
 
 function boxBottom(): string {
@@ -60,7 +74,7 @@ export function renderSentinel(preview: SentinelPreview): void {
   )
   console.log(
     boxLine(
-      `Fee: $${preview.fee.toFixed(2)} (${preview.feePercent}%)  ·  Total deducted: $${preview.totalDeducted.toFixed(2)}`
+      `Fee: $${preview.fee.toFixed(2)} (${(preview.feePercent * 100).toFixed(2)}%)  ·  Total deducted: $${preview.totalDeducted.toFixed(2)}`
     )
   )
   console.log(

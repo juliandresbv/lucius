@@ -155,7 +155,7 @@ async function main() {
 
   const mockPreview = {
     symbol: "VOO", direction: "BUY" as const, amount: 150,
-    estimatedPrice: 498.23, fee: 0.53, feePercent: 0.35,
+    estimatedPrice: 498.23, fee: 0.53, feePercent: 0.0035,
     totalDeducted: 150.53, postTradeBalance: 149.47,
     withinBudget: true, warnings: [],
   }
