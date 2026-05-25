@@ -15,7 +15,7 @@ function visibleLen(str: string): number {
 }
 
 function boxTop(title: string): string {
-  const pad = BOX_WIDTH - title.length - 4
+  const pad = BOX_WIDTH - title.length - 5
   return chalk.dim(`  ┌─ ${chalk.bold.white(title)} ${"─".repeat(Math.max(0, pad))}┐`)
 }
 
