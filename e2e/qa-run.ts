@@ -1,4 +1,4 @@
-// src/qa-run.ts — end-to-end action layer QA with DRY_RUN=true
+// e2e/qa-run.ts — end-to-end action layer QA with DRY_RUN=true
 import "dotenv/config"
 import chalk from "chalk"
 
@@ -27,7 +27,7 @@ async function main() {
 
   // ── 1. Profile ──────────────────────────────────────────────────────────
   section("1. Profile storage")
-  const { saveProfile, loadProfile } = await import("./storage/profile.js")
+  const { saveProfile, loadProfile } = await import("../src/storage/profile.js")
 
   let profile
   try {
@@ -50,7 +50,7 @@ async function main() {
 
   // ── 2. Portfolio ────────────────────────────────────────────────────────
   section("2. Portfolio actions")
-  const { getCheckingBalance, getStockPortfolio, getRoboAdvisorPortfolio, getPortfolioProjection } = await import("./actions/portfolio.js")
+  const { getCheckingBalance, getStockPortfolio, getRoboAdvisorPortfolio, getPortfolioProjection } = await import("../src/actions/portfolio.js")
 
   try {
     const balance = await getCheckingBalance()
@@ -74,7 +74,7 @@ async function main() {
 
   // ── 3. Assets ───────────────────────────────────────────────────────────
   section("3. Asset search (fallback expected on 403)")
-  const { searchAssets, getAssetDetail } = await import("./actions/assets.js")
+  const { searchAssets, getAssetDetail } = await import("../src/actions/assets.js")
 
   let assets
   try {
@@ -96,7 +96,7 @@ async function main() {
 
   // ── 4. Trading — dry run ────────────────────────────────────────────────
   section("4. Trading (DRY_RUN=true)")
-  const { isDryRun, executeTrade, moveFunds, getSentinelPreview } = await import("./actions/trading.js")
+  const { isDryRun, executeTrade, moveFunds, getSentinelPreview } = await import("../src/actions/trading.js")
 
   try {
     const dry = isDryRun()
@@ -123,7 +123,7 @@ async function main() {
 
   // ── 5. History ──────────────────────────────────────────────────────────
   section("5. Transaction history")
-  const { getTransactionHistory } = await import("./actions/history.js")
+  const { getTransactionHistory } = await import("../src/actions/history.js")
 
   try {
     const txs = await getTransactionHistory()
@@ -132,7 +132,7 @@ async function main() {
 
   // ── 6. Recommendations (Claude) ─────────────────────────────────────────
   section("6. Recommendations (calls Claude)")
-  const { getRecommendations } = await import("./actions/recommendations.js")
+  const { getRecommendations } = await import("../src/actions/recommendations.js")
 
   try {
     const balance = { available: 300, currency: "USD" as const }
@@ -143,7 +143,7 @@ async function main() {
 
   // ── 7. Display cards ────────────────────────────────────────────────────
   section("7. Display cards (visual check)")
-  const { renderVantage, renderSentinel, renderMeridian } = await import("./display/agents.js")
+  const { renderVantage, renderSentinel, renderMeridian } = await import("../src/display/agents.js")
 
   const mockRecs = [
     { symbol: "VOO", action: "BUY" as const, amount: 150, rationale: "Broad market exposure, low fees" },
@@ -159,7 +159,7 @@ async function main() {
   }
   renderSentinel(mockPreview)
 
-  const { getPortfolioProjection: getProj } = await import("./actions/portfolio.js")
+  const { getPortfolioProjection: getProj } = await import("../src/actions/portfolio.js")
   try {
     const proj = await getProj()
     renderMeridian(proj, profile.expectedReturn)

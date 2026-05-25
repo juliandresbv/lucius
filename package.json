@@ -7,7 +7,8 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "DRY_RUN=true tsx e2e/qa-run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",
