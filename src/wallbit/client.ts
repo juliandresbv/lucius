@@ -43,5 +43,10 @@ export async function wallbitFetch<T>(
     )
   }
 
-  return res.json() as Promise<T>
+  const json = (await res.json()) as Record<string, unknown>
+  // Unwrap Wallbit's standard {"data": ...} envelope
+  if (json !== null && typeof json === "object" && "data" in json) {
+    return json.data as T
+  }
+  return json as T
 }
