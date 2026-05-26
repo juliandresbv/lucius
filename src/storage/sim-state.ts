@@ -12,7 +12,7 @@ function getSimStatePath(): string {
 }
 
 const DEFAULT_BALANCE = (): number =>
-  parseFloat(process.env.SIM_BALANCE ?? "10000")
+  parseFloat(process.env.SIM_BALANCE ?? "0")
 
 export interface SimHolding {
   symbol: string

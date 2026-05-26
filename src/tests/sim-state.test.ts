@@ -33,8 +33,8 @@ describe("loadSimState", () => {
     const { loadSimState } = await import("../storage/sim-state.js")
     const state = await loadSimState()
 
-    expect(state.balance).toBe(10000)
-    expect(state.initialBalance).toBe(10000)
+    expect(state.balance).toBe(0)
+    expect(state.initialBalance).toBe(0)
     expect(state.holdings).toEqual([])
     expect(state.transactions).toEqual([])
     expect(writeFile).toHaveBeenCalledOnce()
