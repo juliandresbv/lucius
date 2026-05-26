@@ -2,6 +2,8 @@
 import { wallbitApi } from "../wallbit/api.js"
 import { loadProfile } from "../storage/profile.js"
 import { WallbitError } from "../wallbit/types.js"
+import { isSimMode, loadSimState } from "../storage/sim-state.js"
+import { getAssetDetail } from "./assets.js"
 
 export interface CheckingBalance {
   available: number
@@ -31,20 +33,29 @@ export interface PortfolioProjection {
 }
 
 export async function getCheckingBalance(): Promise<CheckingBalance> {
+  if (isSimMode()) {
+    const sim = await loadSimState()
+    return { available: sim.balance, currency: "USD" }
+  }
   const res = await wallbitApi.getCheckingBalance()
-  // API returns [] when account is unfunded/empty
   if (Array.isArray(res)) return { available: 0, currency: "USD" }
   return { available: (res as { available: number }).available ?? 0, currency: "USD" }
 }
 
 export async function getStockPortfolio(): Promise<PortfolioHolding[]> {
+  if (isSimMode()) {
+    const sim = await loadSimState()
+    return Promise.all(
+      sim.holdings.map(async (h) => {
+        const detail = await getAssetDetail(h.symbol).catch(() => null)
+        const currentPrice = detail?.price ?? h.avgPrice
+        return { symbol: h.symbol, shares: h.shares, currentPrice, value: h.shares * currentPrice }
+      })
+    )
+  }
   const res = await wallbitApi.getStockPortfolio()
   return (res.holdings ?? []).map((h) => ({
-    symbol: h.symbol,
-    shares: h.shares,
-    currentPrice: h.currentPrice,
-    value: h.value,
-    name: h.name,
+    symbol: h.symbol, shares: h.shares, currentPrice: h.currentPrice, value: h.value, name: h.name,
   }))
 }
 
