@@ -52,7 +52,7 @@ export async function runOnboarding(): Promise<UserProfile> {
   // Step 2 — Monthly budget
   const budgetStr = await p.text({
     message: "How much would you like to invest per month? (USD)",
-    placeholder: "300",
+    placeholder: "0",
     validate: (v) => {
       const n = parseFloat(v)
       if (isNaN(n) || n <= 0) return "Must be a positive number"

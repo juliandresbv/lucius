@@ -6,7 +6,7 @@ import { loadSimState, resetSimState, type SimTransaction } from "../storage/sim
 export async function setSimBalance(): Promise<void> {
   const amountStr = await p.text({
     message: "New starting balance (USD)",
-    placeholder: "10000",
+    placeholder: "0",
     validate: (v) => {
       const n = parseFloat(v)
       if (isNaN(n) || n <= 0) return "Must be a positive number"

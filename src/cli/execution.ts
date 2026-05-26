@@ -3,6 +3,7 @@ import * as p from "@clack/prompts"
 import chalk from "chalk"
 import { moveFunds } from "../actions/trading.js"
 import { getCheckingBalance } from "../actions/portfolio.js"
+import { isSimMode, loadSimState } from "../storage/sim-state.js"
 import { renderSentinel } from "../display/agents.js"
 import type { SentinelPreview } from "../actions/trading.js"
 
@@ -17,9 +18,16 @@ export async function runMoveFunds(): Promise<void> {
   if (p.isCancel(directionChoice)) return
   const direction = directionChoice as "DEPOSIT" | "WITHDRAWAL"
 
+  let lastAmount = "0"
+  if (isSimMode()) {
+    const sim = await loadSimState().catch(() => null)
+    const last = sim?.transactions.slice().reverse().find((t) => t.type === direction)
+    if (last) lastAmount = String(last.amount)
+  }
+
   const amountStr = await p.text({
     message: "Amount (USD)",
-    placeholder: "100",
+    placeholder: lastAmount,
     validate: (v) => {
       const n = parseFloat(v)
       if (isNaN(n) || n <= 0) return "Must be a positive number"
