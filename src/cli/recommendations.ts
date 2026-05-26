@@ -40,7 +40,7 @@ export async function runRecommendations(): Promise<void> {
   // Session budget prompt
   const budgetStr = await p.text({
     message: `How much do you want to invest today? (USD, max $${balance.available.toFixed(2)})`,
-    placeholder: "300",
+    placeholder: profile.monthlyBudget > 0 ? String(profile.monthlyBudget) : "0",
     validate: (v) => {
       const n = parseFloat(v)
       if (isNaN(n) || n <= 0) return "Must be a positive number"
