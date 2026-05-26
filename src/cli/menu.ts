@@ -7,21 +7,32 @@ import { showLongTermOutlook } from "./outlook.js"
 import { runMoveFunds } from "./execution.js"
 import { runOnboarding } from "./onboarding.js"
 import { getTransactionHistory } from "../actions/history.js"
+import { isSimMode } from "../storage/sim-state.js"
+import { setSimBalance, resetSim, viewSimLedger } from "./simulation.js"
 
 export async function showMainMenu(): Promise<"lucius" | "exit"> {
   while (true) {
+    const options: Parameters<typeof p.select>[0]["options"] = [
+      { value: "portfolio", label: "1. View portfolio" },
+      { value: "recommendations", label: "2. Get recommendations" },
+      { value: "outlook", label: "3. Long-term outlook" },
+      { value: "funds", label: "4. Move funds" },
+      { value: "history", label: "5. Transaction history" },
+      { value: "profile", label: "6. Update profile" },
+      { value: "lucius", label: "L. Talk to Lucius" },
+      ...(isSimMode()
+        ? [
+            { value: "sim-balance", label: "⚡  Set starting balance" },
+            { value: "sim-reset",   label: "⚡  Reset simulation" },
+            { value: "sim-ledger",  label: "⚡  View sim ledger" },
+          ]
+        : []),
+      { value: "exit", label: "Exit" },
+    ]
+
     const choice = await p.select({
       message: chalk.bold("What would you like to do?"),
-      options: [
-        { value: "portfolio", label: "1. View portfolio" },
-        { value: "recommendations", label: "2. Get recommendations" },
-        { value: "outlook", label: "3. Long-term outlook" },
-        { value: "funds", label: "4. Move funds" },
-        { value: "history", label: "5. Transaction history" },
-        { value: "profile", label: "6. Update profile" },
-        { value: "lucius", label: "L. Talk to Lucius" },
-        { value: "exit", label: "Exit" },
-      ],
+      options,
     })
 
     if (p.isCancel(choice) || choice === "exit") return "exit"
@@ -46,6 +57,9 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
       case "profile":
         await runOnboarding()
         break
+      case "sim-balance": await setSimBalance(); break
+      case "sim-reset":   await resetSim();      break
+      case "sim-ledger":  await viewSimLedger();  break
     }
   }
 }
