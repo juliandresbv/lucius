@@ -6,7 +6,34 @@ import { runOnboarding } from "./cli/onboarding.js"
 import { showMainMenu } from "./cli/menu.js"
 import { runLuciusAgent } from "./lucius/agent.js"
 
+async function printHeader(): Promise<void> {
+  console.log()
+  console.log(`  ${chalk.bold.white("Lucius")}  ${chalk.dim("v0.1.0")}`)
+  console.log(chalk.dim("  AI-powered investment advisor"))
+
+  if (process.env.DRY_RUN === "true") {
+    console.log()
+    console.log(chalk.yellow("  ⚙  DEV — DRY_RUN active, no real trades will execute"))
+  }
+
+  if (process.env.SIM_MODE === "true") {
+    const { loadSimState } = await import("./storage/sim-state.js")
+    const sim = await loadSimState().catch(() => null)
+    const stateFile = process.env.SIM_STATE_FILE ?? "sim-state.json"
+    console.log()
+    console.log(chalk.cyan("  ⚡ SIMULATION MODE — trades are paper-only, balance is virtual"))
+    if (sim) {
+      const bal = sim.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      console.log(chalk.dim(`     Sim balance: $${bal}  ·  State: ${stateFile}`))
+    }
+  }
+
+  console.log()
+}
+
 async function main(): Promise<void> {
+  await printHeader()
+
   // Env check
   if (!process.env.WALLBIT_API_KEY) {
     console.error(
