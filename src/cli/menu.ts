@@ -8,7 +8,7 @@ import { runMoveFunds } from "./execution.js"
 import { runOnboarding } from "./onboarding.js"
 import { getTransactionHistory } from "../actions/history.js"
 import { isSimMode } from "../storage/sim-state.js"
-import { setSimBalance, resetSim, viewSimLedger } from "./simulation.js"
+import { runSimMenu } from "./simulation.js"
 
 export async function showMainMenu(): Promise<"lucius" | "exit"> {
   while (true) {
@@ -22,9 +22,9 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
       { value: "lucius", label: "L. Talk to Lucius" },
       ...(isSimMode()
         ? [
-            { value: "sim-balance", label: "⚡  Set starting balance" },
-            { value: "sim-reset",   label: "⚡  Reset simulation" },
-            { value: "sim-ledger",  label: "⚡  View sim ledger" },
+            { value: "__sep__", label: chalk.dim("──────────────────") },
+            { value: "sim",     label: "⚡  Simulation actions" },
+            { value: "__sep__", label: chalk.dim("──────────────────") },
           ]
         : []),
       { value: "exit", label: "Exit" },
@@ -57,9 +57,11 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
       case "profile":
         await runOnboarding()
         break
-      case "sim-balance": await setSimBalance(); break
-      case "sim-reset":   await resetSim();      break
-      case "sim-ledger":  await viewSimLedger();  break
+      case "__sep__":
+        break
+      case "sim":
+        await runSimMenu()
+        break
     }
   }
 }
