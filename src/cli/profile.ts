@@ -219,25 +219,17 @@ export async function runPatchProfile(): Promise<void> {
 }
 
 export async function runProfileMenu(): Promise<void> {
-  while (true) {
-    const action = await p.select({
-      message: "Investment profile",
-      options: [
-        { value: "view",   label: "View investing profile" },
-        { value: "update", label: "Update investing profile" },
-        { value: "back",   label: "Back" },
-      ],
-    })
+  await viewProfile()
 
-    if (p.isCancel(action) || action === "back") return
+  const action = await p.select({
+    message: "Investment profile",
+    options: [
+      { value: "update", label: "Update investing profile" },
+      { value: "back",   label: "Back" },
+    ],
+  })
 
-    switch (action) {
-      case "view":
-        await viewProfile()
-        return
-      case "update":
-        await runPatchProfile()
-        break
-    }
-  }
+  if (p.isCancel(action) || action === "back") return
+
+  if (action === "update") await runPatchProfile()
 }
