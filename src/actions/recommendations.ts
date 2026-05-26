@@ -115,15 +115,16 @@ ${sellEvaluation}
 RULES:
 - Total of all BUY recommendations must not exceed $${sessionBudget}
 - Minimum $1 per trade
-- No single pick may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})
+- No single BUY may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})
 - Only recommend BUY for assets from the AVAILABLE ASSETS list above
 - You MUST include a SELL for every holding marked → MUST SELL above
 - You SHOULD actively recommend SELL for other holdings when strategically justified
+- For SELL, set amount to the holding's full position value (or a partial USD amount if selling only part)
 - Match risk tolerance: conservative = stable/dividend stocks, moderate = mix, aggressive = growth
 - Prefer sectors matching the user's interests
 
 Respond ONLY with a JSON array (no markdown, no explanation):
-[{"symbol":"AAPL","action":"BUY","amount":200,"rationale":"Brief rationale in plain language"}]`
+[{"symbol":"JNJ","action":"SELL","amount":450,"rationale":"Brief rationale"},{"symbol":"AAPL","action":"BUY","amount":200,"rationale":"Brief rationale"}]`
 }
 
 export function parseRecommendations(
@@ -137,12 +138,19 @@ export function parseRecommendations(
     if (!jsonMatch) return []
     const parsed = JSON.parse(jsonMatch[0]) as Recommendation[]
 
-    const portfolioSymbols = new Set(portfolio.map((h) => h.symbol))
+    const portfolioMap = new Map(portfolio.map((h) => [h.symbol, h]))
     const sixtyPct = sessionBudget * 0.6
 
-    const sells = parsed.filter(
-      (r) => r.action === "SELL" && portfolioSymbols.has(r.symbol)
-    )
+    const sells = parsed
+      .filter((r) => r.action === "SELL" && portfolioMap.has(r.symbol))
+      .map((r) => {
+        // Default to full position value when Claude omits or zeros the amount
+        const amount =
+          Number.isFinite(r.amount) && r.amount > 0
+            ? r.amount
+            : portfolioMap.get(r.symbol)!.value
+        return { ...r, amount }
+      })
 
     const maxSpend = Math.min(availableBalance, sessionBudget)
     let remaining = maxSpend

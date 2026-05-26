@@ -133,6 +133,10 @@ export async function runRecommendations(): Promise<void> {
 
 // Execute a SELL trade with Sentinel review and Yes / No / Edit override.
 async function executeWithOverride(rec: Recommendation): Promise<void> {
+  if (!Number.isFinite(rec.amount) || rec.amount <= 0) {
+    console.log(chalk.red(`  Skipping ${rec.symbol}: invalid amount.`))
+    return
+  }
   let currentAmount = rec.amount
 
   while (true) {

@@ -20,6 +20,16 @@ describe("parseRecommendations", () => {
     expect(parseRecommendations(text, portfolio, 1000, 300)).toEqual([])
   })
 
+  it("defaults SELL amount to position value when amount is missing", () => {
+    // portfolio: AAPL value = 360
+    const text = JSON.stringify([
+      { symbol: "AAPL", action: "SELL", rationale: "sell" },
+    ])
+    const result = parseRecommendations(text, portfolio, 1000, 300)
+    expect(result).toHaveLength(1)
+    expect(result[0].amount).toBe(360)
+  })
+
   it("filters out SELLs for symbols not in portfolio", () => {
     const text = JSON.stringify([
       { symbol: "MSFT", action: "SELL", amount: 100, rationale: "sell" },
