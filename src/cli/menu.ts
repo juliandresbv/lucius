@@ -16,7 +16,7 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
       { value: "portfolio", label: "1. View portfolio" },
       { value: "recommendations", label: "2. Get recommendations" },
       { value: "outlook", label: "3. Long-term outlook" },
-      { value: "funds", label: "4. Move funds" },
+      { value: "funds", label: "4. Manage funds" },
       { value: "history", label: "5. Transaction history" },
       { value: "profile", label: "6. Investment profile" },
       { value: "lucius", label: "L. Talk to Lucius" },
