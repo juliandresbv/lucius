@@ -44,3 +44,23 @@ export async function saveProfile(
   await writeFile(PROFILE_PATH, JSON.stringify(full, null, 2), "utf-8")
   return full
 }
+
+export async function patchProfile(
+  updates: Partial<Omit<UserProfile, "expectedReturn" | "createdAt">>
+): Promise<UserProfile> {
+  const existing = await loadProfile()
+  if (!existing) throw new Error("No profile found")
+  const merged = { ...existing, ...updates }
+  const full: UserProfile = {
+    riskTolerance: merged.riskTolerance,
+    monthlyBudget: merged.monthlyBudget,
+    timeHorizon: merged.timeHorizon,
+    sectors: merged.sectors,
+    takeProfitThreshold: merged.takeProfitThreshold,
+    stopLossThreshold: merged.stopLossThreshold,
+    expectedReturn: RETURN_BY_RISK[merged.riskTolerance],
+    createdAt: existing.createdAt,
+  }
+  await writeFile(PROFILE_PATH, JSON.stringify(full, null, 2), "utf-8")
+  return full
+}

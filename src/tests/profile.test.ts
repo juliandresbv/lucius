@@ -50,3 +50,64 @@ describe("loadProfile", () => {
     expect(result).toBeNull()
   })
 })
+
+describe("patchProfile", () => {
+  const baseProfile = {
+    riskTolerance: "moderate" as const,
+    monthlyBudget: 300,
+    timeHorizon: "long" as const,
+    sectors: ["Technology", "Finance"],
+    takeProfitThreshold: 20,
+    stopLossThreshold: 15,
+    expectedReturn: 0.07,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("merges partial updates into existing profile", async () => {
+    const { readFile, writeFile } = await import("node:fs/promises")
+    vi.mocked(readFile).mockResolvedValueOnce(JSON.stringify(baseProfile) as any)
+    vi.mocked(writeFile).mockResolvedValueOnce(undefined)
+
+    const { patchProfile } = await import("../storage/profile.js")
+    const result = await patchProfile({ monthlyBudget: 500 })
+
+    expect(result.monthlyBudget).toBe(500)
+    expect(result.riskTolerance).toBe("moderate")
+    expect(result.timeHorizon).toBe("long")
+  })
+
+  it("recomputes expectedReturn when riskTolerance changes", async () => {
+    const { readFile, writeFile } = await import("node:fs/promises")
+    vi.mocked(readFile).mockResolvedValueOnce(JSON.stringify(baseProfile) as any)
+    vi.mocked(writeFile).mockResolvedValueOnce(undefined)
+
+    const { patchProfile } = await import("../storage/profile.js")
+    const result = await patchProfile({ riskTolerance: "aggressive" })
+
+    expect(result.expectedReturn).toBe(0.10)
+    expect(result.riskTolerance).toBe("aggressive")
+  })
+
+  it("preserves original createdAt", async () => {
+    const { readFile, writeFile } = await import("node:fs/promises")
+    vi.mocked(readFile).mockResolvedValueOnce(JSON.stringify(baseProfile) as any)
+    vi.mocked(writeFile).mockResolvedValueOnce(undefined)
+
+    const { patchProfile } = await import("../storage/profile.js")
+    const result = await patchProfile({ monthlyBudget: 500 })
+
+    expect(result.createdAt).toBe("2026-01-01T00:00:00.000Z")
+  })
+
+  it("throws when no profile exists", async () => {
+    const { readFile } = await import("node:fs/promises")
+    vi.mocked(readFile).mockRejectedValueOnce(new Error("ENOENT"))
+
+    const { patchProfile } = await import("../storage/profile.js")
+    await expect(patchProfile({ monthlyBudget: 500 })).rejects.toThrow("No profile found")
+  })
+})
