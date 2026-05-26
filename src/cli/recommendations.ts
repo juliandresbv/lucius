@@ -107,7 +107,7 @@ export async function runRecommendations(): Promise<void> {
       { value: "buy",  label: `BUY   (${buys.length} trade${buys.length > 1 ? "s" : ""})` },
     ]
     const selected = await p.multiselect({
-      message: "Select operations to perform:",
+      message: "Select operations to perform (Space to toggle · Enter to confirm):",
       options: actionOptions,
       initialValues: ["sell", "buy"],
       required: false,

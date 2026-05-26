@@ -75,7 +75,7 @@ export async function runOnboarding(): Promise<UserProfile> {
 
   // Step 4 — Sectors
   const sectors = await p.multiselect({
-    message: "Which sectors interest you? (Space to select, Enter to confirm)",
+    message: "Which sectors interest you? (Space to toggle · Enter to confirm)",
     options: SECTORS.map((s) => ({ value: s, label: s })),
     required: true,
   })
