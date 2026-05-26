@@ -9,7 +9,7 @@ function getApiKey(): string {
   return key
 }
 
-const RETRY_DELAYS_MS = [1000, 2000, 4000]
+const RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 16000]
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
