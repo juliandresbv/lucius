@@ -9,6 +9,12 @@ function getApiKey(): string {
   return key
 }
 
+const RETRY_DELAYS_MS = [1000, 2000, 4000]
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function wallbitFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -20,33 +26,48 @@ export async function wallbitFetch<T>(
     ...(options.method === "POST" ? { "Content-Type": "application/json" } : {}),
   }
 
-  const res = await fetch(url, { ...options, headers })
+  let lastError: WallbitError | undefined
 
-  if (res.status === 429) {
-    const retryAfter = parseInt(res.headers.get("Retry-After") ?? "60", 10)
-    throw new WallbitError(429, "Rate limit exceeded", retryAfter)
-  }
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) await sleep(RETRY_DELAYS_MS[attempt - 1])
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "")
-    const errorMessages: Record<number, string> = {
-      400: "Bad request — validation error or insufficient funds",
-      401: "Invalid API key",
-      403: "Insufficient permissions or unfunded account",
-      404: "Resource not found",
-      412: "KYC incomplete",
-      422: "Validation error",
+    const res = await fetch(url, { ...options, headers })
+
+    if (res.status === 429) {
+      const retryAfter = parseInt(res.headers.get("Retry-After") ?? "60", 10)
+      throw new WallbitError(429, "Rate limit exceeded", retryAfter)
     }
-    throw new WallbitError(
-      res.status,
-      errorMessages[res.status] ?? `HTTP ${res.status}: ${body}`
-    )
+
+    // Retry on 5xx server errors
+    if (res.status >= 500) {
+      const body = await res.text().catch(() => "")
+      lastError = new WallbitError(res.status, `HTTP ${res.status}: ${body}`)
+      continue
+    }
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      const errorMessages: Record<number, string> = {
+        400: "Bad request — validation error or insufficient funds",
+        401: "Invalid API key",
+        403: "Insufficient permissions or unfunded account",
+        404: "Resource not found",
+        412: "KYC incomplete",
+        422: "Validation error",
+      }
+      throw new WallbitError(
+        res.status,
+        errorMessages[res.status] ?? `HTTP ${res.status}: ${body}`
+      )
+    }
+
+    const json = (await res.json()) as Record<string, unknown>
+    // Unwrap Wallbit's standard {"data": ...} envelope
+    if (json !== null && typeof json === "object" && "data" in json) {
+      return json.data as T
+    }
+    return json as T
   }
 
-  const json = (await res.json()) as Record<string, unknown>
-  // Unwrap Wallbit's standard {"data": ...} envelope
-  if (json !== null && typeof json === "object" && "data" in json) {
-    return json.data as T
-  }
-  return json as T
+  throw lastError!
 }
