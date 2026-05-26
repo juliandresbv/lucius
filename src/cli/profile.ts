@@ -79,8 +79,13 @@ export async function runPatchProfile(): Promise<void> {
           ],
         })
         if (p.isCancel(riskTolerance)) return
-        profile = await patchProfile({ riskTolerance: riskTolerance as "conservative" | "moderate" | "aggressive" })
-        console.log(chalk.dim("  ✓ Risk tolerance updated."))
+        try {
+          profile = await patchProfile({ riskTolerance: riskTolerance as "conservative" | "moderate" | "aggressive" })
+          console.log(chalk.dim("  ✓ Risk tolerance updated."))
+        } catch {
+          p.cancel("Failed to save — profile may have been deleted.")
+          return
+        }
         break
       }
       case "budget": {
@@ -94,8 +99,13 @@ export async function runPatchProfile(): Promise<void> {
           },
         })
         if (p.isCancel(budgetStr)) return
-        profile = await patchProfile({ monthlyBudget: parseFloat(budgetStr as string) })
-        console.log(chalk.dim("  ✓ Monthly budget updated."))
+        try {
+          profile = await patchProfile({ monthlyBudget: parseFloat(budgetStr as string) })
+          console.log(chalk.dim("  ✓ Monthly budget updated."))
+        } catch {
+          p.cancel("Failed to save — profile may have been deleted.")
+          return
+        }
         break
       }
       case "horizon": {
@@ -108,19 +118,30 @@ export async function runPatchProfile(): Promise<void> {
           ],
         })
         if (p.isCancel(timeHorizon)) return
-        profile = await patchProfile({ timeHorizon: timeHorizon as "short" | "medium" | "long" })
-        console.log(chalk.dim("  ✓ Time horizon updated."))
+        try {
+          profile = await patchProfile({ timeHorizon: timeHorizon as "short" | "medium" | "long" })
+          console.log(chalk.dim("  ✓ Time horizon updated."))
+        } catch {
+          p.cancel("Failed to save — profile may have been deleted.")
+          return
+        }
         break
       }
       case "sectors": {
         const newSectors = await p.multiselect({
           message: "Which sectors interest you? (Space to select, Enter to confirm)",
           options: SECTORS.map((s) => ({ value: s, label: s })),
+          initialValues: profile.sectors,
           required: true,
         })
         if (p.isCancel(newSectors)) return
-        profile = await patchProfile({ sectors: newSectors as string[] })
-        console.log(chalk.dim("  ✓ Sectors updated."))
+        try {
+          profile = await patchProfile({ sectors: newSectors as string[] })
+          console.log(chalk.dim("  ✓ Sectors updated."))
+        } catch {
+          p.cancel("Failed to save — profile may have been deleted.")
+          return
+        }
         break
       }
       case "takeprofit": {
@@ -140,7 +161,7 @@ export async function runPatchProfile(): Promise<void> {
             message: "Take-profit threshold (%)",
             validate: (v) => {
               const n = parseFloat(v)
-              if (isNaN(n) || n <= 0) return "Must be a positive number"
+              if (isNaN(n) || n <= 0 || n > 1000) return "Must be between 1 and 1000"
               return undefined
             },
           })
@@ -149,8 +170,13 @@ export async function runPatchProfile(): Promise<void> {
         } else {
           takeProfitThreshold = parseFloat(takeProfitChoice as string)
         }
-        profile = await patchProfile({ takeProfitThreshold })
-        console.log(chalk.dim("  ✓ Take-profit threshold updated."))
+        try {
+          profile = await patchProfile({ takeProfitThreshold })
+          console.log(chalk.dim("  ✓ Take-profit threshold updated."))
+        } catch {
+          p.cancel("Failed to save — profile may have been deleted.")
+          return
+        }
         break
       }
       case "stoploss": {
@@ -179,8 +205,13 @@ export async function runPatchProfile(): Promise<void> {
         } else {
           stopLossThreshold = parseFloat(stopLossChoice as string)
         }
-        profile = await patchProfile({ stopLossThreshold })
-        console.log(chalk.dim("  ✓ Stop-loss threshold updated."))
+        try {
+          profile = await patchProfile({ stopLossThreshold })
+          console.log(chalk.dim("  ✓ Stop-loss threshold updated."))
+        } catch {
+          p.cancel("Failed to save — profile may have been deleted.")
+          return
+        }
         break
       }
     }
