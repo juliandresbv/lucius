@@ -141,7 +141,7 @@ async function main() {
   try {
     const balance = { available: 300, currency: "USD" as const }
     const holdings: never[] = []
-    const recs = await getRecommendations(profile, holdings, balance, assets ?? [])
+    const recs = await getRecommendations(profile, holdings, balance, assets ?? [], 300)
     pass("getRecommendations()", `${recs.length} recommendations: ${recs.map(r => `${r.symbol} $${r.amount}`).join(", ") || "none"}`)
   } catch (e) { fail("getRecommendations()", e) }
 
