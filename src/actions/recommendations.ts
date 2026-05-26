@@ -11,6 +11,7 @@ export interface Recommendation {
   action: "BUY" | "SELL" | "HOLD"
   amount: number
   rationale: string
+  isFullPosition?: boolean
 }
 
 export async function getRecommendations(
@@ -144,12 +145,11 @@ export function parseRecommendations(
     const sells = parsed
       .filter((r) => r.action === "SELL" && portfolioMap.has(r.symbol))
       .map((r) => {
-        // Default to full position value when Claude omits or zeros the amount
-        const amount =
-          Number.isFinite(r.amount) && r.amount > 0
-            ? r.amount
-            : portfolioMap.get(r.symbol)!.value
-        return { ...r, amount }
+        const positionValue = portfolioMap.get(r.symbol)!.value
+        const providedAmount = Number.isFinite(r.amount) && r.amount > 0
+        const amount = providedAmount ? r.amount : positionValue
+        const isFullPosition = amount === positionValue ? true : undefined
+        return { ...r, amount, isFullPosition }
       })
 
     const maxSpend = Math.min(availableBalance, sessionBudget)

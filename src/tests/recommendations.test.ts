@@ -28,6 +28,7 @@ describe("parseRecommendations", () => {
     const result = parseRecommendations(text, portfolio, 1000, 300)
     expect(result).toHaveLength(1)
     expect(result[0].amount).toBe(360)
+    expect(result[0].isFullPosition).toBe(true)
   })
 
   it("filters out SELLs for symbols not in portfolio", () => {
@@ -89,6 +90,28 @@ describe("parseRecommendations", () => {
     const result = parseRecommendations(text, portfolio, 1000, 300)
     expect(result[0].action).toBe("SELL")
     expect(result[1].action).toBe("BUY")
+  })
+
+  it("does not flag isFullPosition when Claude provides a partial SELL amount", () => {
+    // portfolio: AAPL value = 360; Claude provides amount=200
+    const text = JSON.stringify([
+      { symbol: "AAPL", action: "SELL", amount: 200, rationale: "partial sell" },
+    ])
+    const result = parseRecommendations(text, portfolio, 1000, 300)
+    expect(result).toHaveLength(1)
+    expect(result[0].amount).toBe(200)
+    expect(result[0].isFullPosition).toBeFalsy()
+  })
+
+  it("flags isFullPosition when Claude provides the full position value", () => {
+    // portfolio: AAPL value = 360; Claude provides exactly 360
+    const text = JSON.stringify([
+      { symbol: "AAPL", action: "SELL", amount: 360, rationale: "full sell" },
+    ])
+    const result = parseRecommendations(text, portfolio, 1000, 300)
+    expect(result).toHaveLength(1)
+    expect(result[0].amount).toBe(360)
+    expect(result[0].isFullPosition).toBe(true)
   })
 })
 

@@ -166,8 +166,9 @@ async function executeWithOverride(rec: Recommendation): Promise<void> {
       }
     }
 
+    const fullLabel = rec.isFullPosition && currentAmount === rec.amount ? " (full position)" : ""
     const choice = await p.select({
-      message: `Execute SELL ${rec.symbol} $${currentAmount}?`,
+      message: `Execute SELL ${rec.symbol} $${currentAmount}${fullLabel}?`,
       options: [
         { value: "yes", label: "Yes" },
         { value: "no", label: "No" },
