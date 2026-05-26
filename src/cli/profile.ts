@@ -234,7 +234,7 @@ export async function runProfileMenu(): Promise<void> {
     switch (action) {
       case "view":
         await viewProfile()
-        break
+        return
       case "update":
         await runPatchProfile()
         break
