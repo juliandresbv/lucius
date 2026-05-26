@@ -24,7 +24,7 @@ export function renderPortfolio(
     console.log(chalk.dim("  ────────────────────────────────────────────"))
     for (const h of holdings) {
       const symbol = h.symbol.padEnd(9)
-      const shares = String(h.shares).padEnd(9)
+      const shares = h.shares.toFixed(2).padEnd(9)
       const price = `$${h.currentPrice.toFixed(2)}`.padEnd(14)
       const value = `$${h.value.toFixed(2)}`
       console.log(
