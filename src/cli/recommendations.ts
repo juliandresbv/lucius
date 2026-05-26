@@ -3,7 +3,7 @@ import * as p from "@clack/prompts"
 import chalk from "chalk"
 import { getCheckingBalance, getStockPortfolio } from "../actions/portfolio.js"
 import { searchAssets } from "../actions/assets.js"
-import { getRecommendations, type Recommendation } from "../actions/recommendations.js"
+import { getRecommendations, type Recommendation, type RecommendationOptions } from "../actions/recommendations.js"
 import { getSentinelPreview, executeTrade } from "../actions/trading.js"
 import { renderVantage, renderSentinel } from "../display/agents.js"
 import { loadProfile } from "../storage/profile.js"
@@ -37,20 +37,38 @@ export async function runRecommendations(): Promise<void> {
     return
   }
 
-  // Session budget prompt
-  const budgetStr = await p.text({
-    message: `How much do you want to invest today? (USD, max $${balance.available.toFixed(2)})`,
-    placeholder: "300",
-    validate: (v) => {
-      const n = parseFloat(v)
-      if (isNaN(n) || n <= 0) return "Must be a positive number"
-      if (n > balance.available)
-        return `Cannot exceed available balance ($${balance.available.toFixed(2)})`
-      return undefined
-    },
+  // Recommendation type selection
+  const recTypes = await p.multiselect({
+    message: "What would you like Vantage to recommend?",
+    options: [
+      { value: "sell", label: "SELL — review threshold-crossing holdings" },
+      { value: "buy",  label: "BUY — new positions from available assets" },
+    ],
+    initialValues: ["sell", "buy"],
+    required: true,
   })
-  if (p.isCancel(budgetStr)) return
-  const sessionBudget = parseFloat(budgetStr as string)
+  if (p.isCancel(recTypes)) return
+  const includeSell = (recTypes as string[]).includes("sell")
+  const includeBuy  = (recTypes as string[]).includes("buy")
+  const recOptions: RecommendationOptions = { includeSell, includeBuy }
+
+  // Session budget (only needed for BUY)
+  let sessionBudget = 0
+  if (includeBuy) {
+    const budgetStr = await p.text({
+      message: `How much do you want to invest today? (USD, max $${balance.available.toFixed(2)})`,
+      placeholder: "300",
+      validate: (v) => {
+        const n = parseFloat(v)
+        if (isNaN(n) || n <= 0) return "Must be a positive number"
+        if (n > balance.available)
+          return `Cannot exceed available balance ($${balance.available.toFixed(2)})`
+        return undefined
+      },
+    })
+    if (p.isCancel(budgetStr)) return
+    sessionBudget = parseFloat(budgetStr as string)
+  }
 
   // Fetch portfolio, assets, and Claude recommendations
   const spinner = p.spinner()
@@ -61,7 +79,9 @@ export async function runRecommendations(): Promise<void> {
     const sectors = profile.sectors.length > 0 ? profile.sectors : ["Technology"]
     const [holdings, sectorBatches] = await Promise.all([
       getStockPortfolio(),
-      Promise.all(sectors.map((s) => searchAssets(s, 10))),
+      includeBuy
+        ? Promise.all(sectors.map((s) => searchAssets(s, 10)))
+        : Promise.resolve([] as AssetInfo[][]),
     ])
     const seen = new Set<string>()
     const assets: AssetInfo[] = []
@@ -78,7 +98,8 @@ export async function runRecommendations(): Promise<void> {
       holdings,
       balance,
       assets,
-      sessionBudget
+      sessionBudget,
+      recOptions
     )
     result = { holdings, assets, recommendations }
     spinner.stop("Analysis complete.")

@@ -13,14 +13,20 @@ export interface Recommendation {
   rationale: string
 }
 
+export interface RecommendationOptions {
+  includeSell?: boolean
+  includeBuy?: boolean
+}
+
 export async function getRecommendations(
   profile: UserProfile,
   portfolio: PortfolioHolding[],
   balance: CheckingBalance,
   assets: AssetInfo[],
-  sessionBudget: number
+  sessionBudget: number,
+  options: RecommendationOptions = {}
 ): Promise<Recommendation[]> {
-  const prompt = buildPrompt(profile, portfolio, balance, assets, sessionBudget)
+  const prompt = buildPrompt(profile, portfolio, balance, assets, sessionBudget, options)
 
   const msg = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -41,8 +47,19 @@ export function buildPrompt(
   portfolio: PortfolioHolding[],
   balance: CheckingBalance,
   assets: AssetInfo[],
-  sessionBudget: number
+  sessionBudget: number,
+  options: RecommendationOptions = {}
 ): string {
+  const { includeSell = true, includeBuy = true } = options
+
+  // ── intro ────────────────────────────────────────────────────────────────
+  const intro = !includeBuy
+    ? "You are Vantage, an investment recommendation engine. Generate SELL recommendations for threshold-crossing holdings."
+    : !includeSell
+    ? "You are Vantage, an investment recommendation engine. Generate 2-3 BUY recommendations."
+    : "You are Vantage, an investment recommendation engine. Generate 2-3 specific investment recommendations."
+
+  // ── holdings summary ─────────────────────────────────────────────────────
   const holdingsSummary =
     portfolio.length > 0
       ? portfolio
@@ -58,6 +75,7 @@ export function buildPrompt(
           .join("\n")
       : "No current holdings"
 
+  // ── sell candidates ──────────────────────────────────────────────────────
   const sellCandidates = portfolio
     .filter((h): h is PortfolioHolding & { avgPrice: number } => h.avgPrice !== undefined)
     .flatMap((h) => {
@@ -71,6 +89,12 @@ export function buildPrompt(
       return []
     })
 
+  const sellEvaluation =
+    sellCandidates.length > 0
+      ? `SELL CANDIDATES (holdings that have crossed a threshold — you MUST recommend SELL for these):\n${sellCandidates.map((c) => `- ${c}`).join("\n")}`
+      : `No holdings have crossed take-profit (${profile.takeProfitThreshold}%) or stop-loss (${profile.stopLossThreshold}%) thresholds.`
+
+  // ── assets summary ───────────────────────────────────────────────────────
   const assetsSummary = assets
     .slice(0, 10)
     .map(
@@ -79,12 +103,27 @@ export function buildPrompt(
     )
     .join("\n")
 
-  const sellEvaluation =
-    sellCandidates.length > 0
-      ? `SELL CANDIDATES (holdings that have crossed a threshold — you MUST recommend SELL for these):\n${sellCandidates.map((c) => `- ${c}`).join("\n")}`
-      : `No holdings have crossed take-profit (${profile.takeProfitThreshold}%) or stop-loss (${profile.stopLossThreshold}%) thresholds.`
+  // ── optional sections ────────────────────────────────────────────────────
+  const budgetLine        = includeBuy ? `\nSESSION BUDGET: $${sessionBudget}` : ""
+  const assetsSection     = includeBuy ? `\n\nAVAILABLE ASSETS:\n${assetsSummary}` : ""
+  const sellEvalSection   = includeSell ? `\n\nSELL EVALUATION:\n${sellEvaluation}` : ""
 
-  return `You are Vantage, an investment recommendation engine. Generate 2-3 specific investment recommendations.
+  // ── rules ────────────────────────────────────────────────────────────────
+  const rules: string[] = []
+  if (includeBuy) {
+    rules.push(`Total of all BUY recommendations must not exceed $${sessionBudget}`)
+    rules.push(`Minimum $1 per trade`)
+    rules.push(`No single pick may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})`)
+    rules.push(`Only recommend BUY for assets from the AVAILABLE ASSETS list above`)
+  }
+  if (includeSell) {
+    rules.push(`You MUST include a SELL for every SELL CANDIDATE listed above`)
+    rules.push(`You may also recommend SELL for other current holdings if strategically warranted`)
+  }
+  rules.push(`Match risk tolerance: conservative = stable/dividend stocks, moderate = mix, aggressive = growth`)
+  rules.push(`Prefer sectors matching the user's interests`)
+
+  return `${intro}
 
 USER PROFILE:
 - Risk tolerance: ${profile.riskTolerance}
@@ -97,24 +136,10 @@ USER PROFILE:
 CURRENT PORTFOLIO:
 ${holdingsSummary}
 
-AVAILABLE BALANCE: $${balance.available}
-SESSION BUDGET: $${sessionBudget}
-
-AVAILABLE ASSETS:
-${assetsSummary}
-
-SELL EVALUATION:
-${sellEvaluation}
+AVAILABLE BALANCE: $${balance.available}${budgetLine}${assetsSection}${sellEvalSection}
 
 RULES:
-- Total of all BUY recommendations must not exceed $${sessionBudget}
-- Minimum $1 per trade
-- No single pick may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})
-- Only recommend BUY for assets from the AVAILABLE ASSETS list above
-- You MUST include a SELL for every SELL CANDIDATE listed above
-- You may also recommend SELL for other current holdings if strategically warranted
-- Match risk tolerance: conservative = stable/dividend stocks, moderate = mix, aggressive = growth
-- Prefer sectors matching the user's interests
+${rules.map((r) => `- ${r}`).join("\n")}
 
 Respond ONLY with a JSON array (no markdown, no explanation):
 [{"symbol":"AAPL","action":"BUY","amount":200,"rationale":"Brief rationale in plain language"}]`

@@ -136,4 +136,17 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("AAPL")
     expect(prompt).toContain("MUST recommend SELL")
   })
+
+  it("omits SELL EVALUATION section when includeSell is false", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300, { includeSell: false })
+    expect(prompt).not.toContain("SELL EVALUATION")
+    expect(prompt).not.toContain("MUST recommend SELL")
+  })
+
+  it("omits SESSION BUDGET and AVAILABLE ASSETS when includeBuy is false", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300, { includeBuy: false })
+    expect(prompt).not.toContain("SESSION BUDGET")
+    expect(prompt).not.toContain("AVAILABLE ASSETS")
+    expect(prompt).not.toContain("60%")
+  })
 })
