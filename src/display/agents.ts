@@ -37,29 +37,60 @@ function boxBottom(): string {
 export function renderVantage(
   recommendations: Recommendation[],
   balance: number,
-  monthlyBudget: number
+  sessionBudget: number
 ): void {
+  const sells = recommendations.filter((r) => r.action === "SELL")
+  const buys = recommendations.filter((r) => r.action === "BUY")
+
   console.log()
   console.log(boxTop("Vantage"))
   console.log(
     boxLine(
-      chalk.dim(`Available: $${balance.toFixed(2)} · Budget cap: $${monthlyBudget}`)
+      chalk.dim(
+        `Session budget: $${sessionBudget}  ·  Available: $${balance.toFixed(2)}`
+      )
     )
   )
   console.log(boxLine(""))
+
   if (recommendations.length === 0) {
     console.log(
       boxLine(chalk.yellow("No recommendations for current balance / profile."))
     )
   } else {
-    for (const r of recommendations) {
-      console.log(
-        boxLine(
-          `${chalk.bold.cyan(r.symbol.padEnd(6))} $${String(r.amount).padStart(6)}  ${r.rationale}`
+    if (sells.length > 0) {
+      console.log(boxLine(chalk.bold.red("SELL")))
+      for (const r of sells) {
+        console.log(
+          boxLine(
+            chalk.red(
+              `${r.symbol.padEnd(6)} $${String(r.amount).padStart(6)}  ${r.rationale}`
+            )
+          )
         )
-      )
+      }
+    }
+    if (sells.length > 0 && buys.length > 0) {
+      console.log(boxLine(""))
+    }
+    if (buys.length > 0) {
+      console.log(boxLine(chalk.bold.cyan("BUY")))
+      for (const r of buys) {
+        console.log(
+          boxLine(
+            chalk.cyan(
+              `${r.symbol.padEnd(6)} $${String(r.amount).padStart(6)}  ${r.rationale}`
+            )
+          )
+        )
+      }
+    }
+    if (sells.length > 0) {
+      console.log(boxLine(""))
+      console.log(boxLine(chalk.dim("SELLs will execute first")))
     }
   }
+
   console.log(boxBottom())
   console.log()
 }
@@ -67,9 +98,16 @@ export function renderVantage(
 export function renderSentinel(preview: SentinelPreview): void {
   console.log()
   console.log(boxTop("Sentinel"))
+  const dirLabel = preview.operationLabel ?? preview.direction
+  const coloredDir =
+    dirLabel === "SELL" || dirLabel === "WITHDRAWAL"
+      ? chalk.red(dirLabel)
+      : chalk.cyan(dirLabel)
   console.log(
     boxLine(
-      chalk.dim(`Simulated: ${preview.operationLabel ?? preview.direction} ${preview.symbol} $${preview.amount}`)
+      chalk.dim("Simulated: ") +
+        coloredDir +
+        chalk.dim(` ${preview.symbol} $${preview.amount}`)
     )
   )
   console.log(
