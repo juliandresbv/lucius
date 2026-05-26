@@ -18,6 +18,7 @@ import { renderSentinel, renderVantage, renderMeridian } from "../display/agents
 import { loadProfile } from "../storage/profile.js"
 import type { UserProfile } from "../storage/profile.js"
 import type { CheckingBalance } from "../actions/portfolio.js"
+import { checkGuard } from "./guard.js"
 
 const anthropic = new Anthropic()
 
@@ -60,6 +61,12 @@ export async function runLuciusAgent(): Promise<void> {
 
     if (userInput.trim().toLowerCase() === "exit") break
     if (!userInput.trim()) continue
+
+    const guardResult = await checkGuard(userInput, anthropic)
+    if (guardResult.verdict === "BLOCKED") {
+      console.log(chalk.white("\n  Lucius: ") + guardResult.message + "\n")
+      continue
+    }
 
     history.push({ role: "user", content: userInput })
 
