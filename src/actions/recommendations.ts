@@ -32,7 +32,7 @@ export async function getRecommendations(
     .map((c) => (c as { type: "text"; text: string }).text)
     .join("")
 
-  return parseRecommendations(text, balance.available, profile.monthlyBudget)
+  return parseRecommendations(text, portfolio, balance.available, profile.monthlyBudget)
 }
 
 function buildPrompt(
@@ -94,21 +94,35 @@ Respond ONLY with a JSON array (no markdown, no explanation):
 
 export function parseRecommendations(
   text: string,
+  portfolio: PortfolioHolding[],
   availableBalance: number,
-  monthlyBudget: number
+  sessionBudget: number
 ): Recommendation[] {
   try {
     const jsonMatch = text.match(/\[[\s\S]*?\]/)
     if (!jsonMatch) return []
     const parsed = JSON.parse(jsonMatch[0]) as Recommendation[]
-    const maxSpend = Math.min(availableBalance, monthlyBudget)
+
+    const portfolioSymbols = new Set(portfolio.map((h) => h.symbol))
+    const sixtyPct = sessionBudget * 0.6
+
+    const sells = parsed.filter(
+      (r) => r.action === "SELL" && portfolioSymbols.has(r.symbol)
+    )
+
+    const maxSpend = Math.min(availableBalance, sessionBudget)
     let remaining = maxSpend
-    return parsed
-      .filter((r) => r.action === "BUY" && r.amount > 0 && r.amount <= remaining)
-      .map((r) => {
-        remaining -= r.amount
-        return r
-      })
+    const buys: Recommendation[] = []
+    for (const r of parsed) {
+      if (r.action !== "BUY") continue
+      if (r.amount < 1) continue
+      if (r.amount > sixtyPct) continue
+      if (r.amount > remaining) continue
+      remaining -= r.amount
+      buys.push(r)
+    }
+
+    return [...sells, ...buys]
   } catch {
     return []
   }
