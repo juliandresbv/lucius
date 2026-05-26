@@ -48,10 +48,11 @@ export async function runMoveFunds(): Promise<void> {
   const preview: SentinelPreview = {
     symbol: "USD",
     direction: direction === "DEPOSIT" ? "BUY" : "SELL",
+    operationLabel: direction,
     amount,
     estimatedPrice: 1,
     fee: 0,
-    feePercent: 0,
+    feeRate: 0,
     totalDeducted: direction === "WITHDRAWAL" ? amount : 0,
     postTradeBalance: postBalance,
     withinBudget: true,

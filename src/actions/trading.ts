@@ -31,10 +31,12 @@ export interface DryRunResult {
 export interface SentinelPreview {
   symbol: string
   direction: "BUY" | "SELL"
+  /** Optional override for what the display shows instead of `direction` (e.g. "DEPOSIT", "WITHDRAWAL") */
+  operationLabel?: string
   amount: number
   estimatedPrice: number
   fee: number
-  feePercent: number
+  feeRate: number
   totalDeducted: number
   postTradeBalance: number
   withinBudget: boolean
@@ -93,7 +95,7 @@ export async function getSentinelPreview(
     amount,
     estimatedPrice: asset.price,
     fee,
-    feePercent: feeRes.percentage,
+    feeRate: feeRes.percentage,
     totalDeducted,
     postTradeBalance,
     withinBudget: true,

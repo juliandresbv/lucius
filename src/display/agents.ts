@@ -69,12 +69,12 @@ export function renderSentinel(preview: SentinelPreview): void {
   console.log(boxTop("Sentinel"))
   console.log(
     boxLine(
-      chalk.dim(`Simulated: ${preview.direction} ${preview.symbol} $${preview.amount}`)
+      chalk.dim(`Simulated: ${preview.operationLabel ?? preview.direction} ${preview.symbol} $${preview.amount}`)
     )
   )
   console.log(
     boxLine(
-      `Fee: $${preview.fee.toFixed(2)} (${(preview.feePercent * 100).toFixed(2)}%)  ·  Total deducted: $${preview.totalDeducted.toFixed(2)}`
+      `Fee: $${preview.fee.toFixed(2)} (${(preview.feeRate * 100).toFixed(2)}%)  ·  Total deducted: $${preview.totalDeducted.toFixed(2)}`
     )
   )
   console.log(

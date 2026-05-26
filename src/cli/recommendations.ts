@@ -30,11 +30,22 @@ export async function runRecommendations(): Promise<void> {
   let result: FetchResult | undefined
 
   try {
-    const [balance, holdings, assets] = await Promise.all([
-      getCheckingBalance(),
-      getStockPortfolio(),
-      searchAssets(profile.sectors[0] ?? "Technology", 10),
+    const sectors = profile.sectors.length > 0 ? profile.sectors : ["Technology"]
+    const [[balance, holdings], sectorBatches] = await Promise.all([
+      Promise.all([getCheckingBalance(), getStockPortfolio()]),
+      Promise.all(sectors.map(s => searchAssets(s, 10))),
     ])
+    // Merge and deduplicate assets across all sectors
+    const seen = new Set<string>()
+    const assets: AssetInfo[] = []
+    for (const batch of sectorBatches) {
+      for (const a of batch) {
+        if (!seen.has(a.symbol)) {
+          seen.add(a.symbol)
+          assets.push(a)
+        }
+      }
+    }
     const recommendations = await getRecommendations(profile, holdings, balance, assets)
     result = { balance, holdings, assets, recommendations }
     spinner.stop("Analysis complete.")
