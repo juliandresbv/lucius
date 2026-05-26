@@ -72,3 +72,43 @@ function computeDelta(t: SimTransaction): number {
     case "WITHDRAWAL": return -t.amount
   }
 }
+
+export async function runSimMenu(): Promise<void> {
+  const action = await p.select({
+    message: "Simulation actions",
+    options: [
+      {
+        value: "balance",
+        label: "Set starting balance",
+        hint: "configure simulation funds",
+      },
+      {
+        value: "reset",
+        label: "Reset simulation",
+        hint: "clear trades and start fresh",
+      },
+      {
+        value: "ledger",
+        label: "View sim ledger",
+        hint: "browse transaction history",
+      },
+      { value: "back", label: "Back" },
+    ],
+  })
+
+  if (p.isCancel(action)) return
+
+  switch (action) {
+    case "balance":
+      await setSimBalance()
+      break
+    case "reset":
+      await resetSim()
+      break
+    case "ledger":
+      await viewSimLedger()
+      break
+    case "back":
+      return
+  }
+}
