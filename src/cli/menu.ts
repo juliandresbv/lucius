@@ -5,7 +5,7 @@ import { showPortfolio } from "./portfolio.js"
 import { runRecommendations } from "./recommendations.js"
 import { showLongTermOutlook } from "./outlook.js"
 import { runMoveFunds } from "./execution.js"
-import { runOnboarding } from "./onboarding.js"
+import { runProfileMenu } from "./profile.js"
 import { getTransactionHistory } from "../actions/history.js"
 import { isSimMode } from "../storage/sim-state.js"
 import { runSimMenu } from "./simulation.js"
@@ -18,7 +18,7 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
       { value: "outlook", label: "3. Long-term outlook" },
       { value: "funds", label: "4. Move funds" },
       { value: "history", label: "5. Transaction history" },
-      { value: "profile", label: "6. Update profile" },
+      { value: "profile", label: "6. Investment profile" },
       { value: "lucius", label: "L. Talk to Lucius" },
       ...(isSimMode() ? [{ value: "sim", label: "⚡  Simulation actions" }] : []),
       { value: "exit", label: "Exit" },
@@ -49,7 +49,7 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
         await showHistory()
         break
       case "profile":
-        await runOnboarding()
+        await runProfileMenu()
         break
       case "sim":
         await runSimMenu()
