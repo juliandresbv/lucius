@@ -31,16 +31,16 @@ export function renderPortfolio(
         `  ${chalk.cyan(symbol)}${shares}${price}${chalk.bold(value)}`
       )
 
-      // Print sub-line if avgPrice is available
-      if (h.avgPrice !== undefined) {
+      if (h.avgPrice !== undefined && h.avgPrice > 0) {
         const avgCostValue = `$${h.avgPrice.toFixed(2)}`
         const gainLoss = h.currentPrice - h.avgPrice
         const gainLossPercent = (gainLoss / h.avgPrice) * 100
-        const sign = gainLossPercent >= 0 ? "+" : ""
-        const gainLossColor = gainLossPercent >= 0 ? chalk.green : chalk.red
+        const isGain = gainLossPercent >= 0
+        const sign = isGain ? "+" : ""
+        const pnlColor = isGain ? chalk.green : chalk.red
 
         console.log(
-          `    ${chalk.dim("avg")} ${avgCostValue}  ${gainLossColor(`${sign}${gainLossPercent.toFixed(1)}%`)}`
+          `    ${chalk.dim("avg")} ${avgCostValue}  ${pnlColor(`${sign}${gainLossPercent.toFixed(1)}%`)}`
         )
       }
     }
