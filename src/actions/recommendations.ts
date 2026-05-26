@@ -148,7 +148,7 @@ export function parseRecommendations(
         const positionValue = portfolioMap.get(r.symbol)!.value
         const providedAmount = Number.isFinite(r.amount) && r.amount > 0
         const amount = providedAmount ? r.amount : positionValue
-        const isFullPosition = amount === positionValue ? true : undefined
+        const isFullPosition = Math.abs(amount - positionValue) < 0.01 ? true : undefined
         return { ...r, amount, isFullPosition }
       })
 
