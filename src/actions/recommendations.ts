@@ -17,9 +17,10 @@ export async function getRecommendations(
   profile: UserProfile,
   portfolio: PortfolioHolding[],
   balance: CheckingBalance,
-  assets: AssetInfo[]
+  assets: AssetInfo[],
+  sessionBudget: number
 ): Promise<Recommendation[]> {
-  const prompt = buildPrompt(profile, portfolio, balance, assets)
+  const prompt = buildPrompt(profile, portfolio, balance, assets, sessionBudget)
 
   const msg = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -32,14 +33,15 @@ export async function getRecommendations(
     .map((c) => (c as { type: "text"; text: string }).text)
     .join("")
 
-  return parseRecommendations(text, portfolio, balance.available, profile.monthlyBudget)
+  return parseRecommendations(text, portfolio, balance.available, sessionBudget)
 }
 
-function buildPrompt(
+export function buildPrompt(
   profile: UserProfile,
   portfolio: PortfolioHolding[],
   balance: CheckingBalance,
-  assets: AssetInfo[]
+  assets: AssetInfo[],
+  sessionBudget: number
 ): string {
   const holdingsSummary =
     portfolio.length > 0
@@ -59,13 +61,10 @@ function buildPrompt(
     )
     .join("\n")
 
-  const maxSpend = Math.min(balance.available, profile.monthlyBudget)
-
   return `You are Vantage, an investment recommendation engine. Generate 2-3 specific investment recommendations.
 
 USER PROFILE:
 - Risk tolerance: ${profile.riskTolerance}
-- Monthly budget: $${profile.monthlyBudget}
 - Time horizon: ${profile.timeHorizon}
 - Sectors of interest: ${profile.sectors.join(", ")}
 - Expected annual return: ${(profile.expectedReturn * 100).toFixed(0)}%
@@ -76,15 +75,17 @@ CURRENT PORTFOLIO:
 ${holdingsSummary}
 
 AVAILABLE BALANCE: $${balance.available}
-MAXIMUM TO INVEST THIS SESSION: $${maxSpend}
+SESSION BUDGET: $${sessionBudget}
 
 AVAILABLE ASSETS:
 ${assetsSummary}
 
 RULES:
-- Total of all recommendations must not exceed $${maxSpend}
-- Each amount must be a round number (multiple of $10, minimum $10)
+- Total of all BUY recommendations must not exceed $${sessionBudget}
+- Minimum $1 per trade
+- No single pick may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})
 - Only recommend BUY for assets from the AVAILABLE ASSETS list above
+- You may recommend SELL for assets the user currently holds (see CURRENT PORTFOLIO)
 - Match risk tolerance: conservative = stable/dividend stocks, moderate = mix, aggressive = growth
 - Prefer sectors matching the user's interests
 

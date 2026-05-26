@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest"
-import { parseRecommendations } from "../actions/recommendations.js"
-import type { PortfolioHolding } from "../actions/portfolio.js"
+import { parseRecommendations, buildPrompt } from "../actions/recommendations.js"
+import type { PortfolioHolding, CheckingBalance } from "../actions/portfolio.js"
+import type { UserProfile } from "../storage/profile.js"
+import type { AssetInfo } from "../actions/assets.js"
 
 const portfolio: PortfolioHolding[] = [
   { symbol: "AAPL", shares: 2, currentPrice: 180, value: 360 },
@@ -77,5 +79,41 @@ describe("parseRecommendations", () => {
     const result = parseRecommendations(text, portfolio, 1000, 300)
     expect(result[0].action).toBe("SELL")
     expect(result[1].action).toBe("BUY")
+  })
+})
+
+describe("buildPrompt", () => {
+  const profile: UserProfile = {
+    riskTolerance: "moderate",
+    monthlyBudget: 500,   // intentionally different from sessionBudget
+    timeHorizon: "medium",
+    sectors: ["Technology"],
+    takeProfitThreshold: 20,
+    stopLossThreshold: 15,
+    expectedReturn: 0.07,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  }
+  const balance: CheckingBalance = { available: 1000, currency: "USD" }
+  const assets: AssetInfo[] = []
+
+  it("contains SESSION BUDGET with the sessionBudget value", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300)
+    expect(prompt).toContain("SESSION BUDGET")
+    expect(prompt).toContain("300")
+  })
+
+  it("does not contain Monthly budget label", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300)
+    expect(prompt).not.toContain("Monthly budget:")
+  })
+
+  it("contains 60% cap rule", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300)
+    expect(prompt).toContain("60%")
+  })
+
+  it("contains $1 minimum rule", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300)
+    expect(prompt).toContain("$1")
   })
 })
