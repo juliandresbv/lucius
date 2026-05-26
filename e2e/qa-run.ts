@@ -2,6 +2,8 @@
 // Uses PROFILE_FILE=profile.test.json so the production profile is never touched.
 import "dotenv/config"
 process.env.PROFILE_FILE = "profile.test.json"
+process.env.SIM_STATE_FILE = "sim-state.test.json"
+// SIM_MODE is set only in section 8 to avoid affecting earlier Wallbit read checks
 import chalk from "chalk"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -167,6 +169,65 @@ async function main() {
     renderMeridian(proj, profile.expectedReturn)
     pass("All 3 cards rendered ✓", "")
   } catch (e) { fail("renderMeridian()", e) }
+
+  // ── 8. Simulation layer ─────────────────────────────────────────────
+  section("8. Simulation layer (SIM_MODE=true)")
+  process.env.SIM_MODE = "true"
+
+  const { isSimMode, loadSimState, resetSimState } = await import("../src/storage/sim-state.js")
+
+  try {
+    if (!isSimMode()) throw new Error("isSimMode() returned false")
+    pass("isSimMode()", "true ✓")
+  } catch (e) { fail("isSimMode()", e) }
+
+  try {
+    const state = await resetSimState(5000)
+    if (state.balance !== 5000) throw new Error(`expected 5000, got ${state.balance}`)
+    if (state.holdings.length !== 0) throw new Error("holdings not empty")
+    pass("resetSimState(5000)", `balance=$${state.balance}, holdings=0`)
+  } catch (e) { fail("resetSimState(5000)", e) }
+
+  try {
+    const { getCheckingBalance: getSimBalance } = await import("../src/actions/portfolio.js")
+    const balance = await getSimBalance()
+    if (balance.available !== 5000) throw new Error(`expected 5000, got ${balance.available}`)
+    pass("getCheckingBalance() [sim]", `available=$${balance.available}`)
+  } catch (e) { fail("getCheckingBalance() [sim]", e) }
+
+  try {
+    const { moveFunds: simDeposit } = await import("../src/actions/trading.js")
+    const result = await simDeposit("DEPOSIT", 1000)
+    if (!result.simulated) throw new Error("expected simulated=true")
+    const state = await loadSimState()
+    if (state.balance !== 6000) throw new Error(`expected 6000, got ${state.balance}`)
+    pass("moveFunds('DEPOSIT', 1000) [sim]", `new balance=$${state.balance}`)
+  } catch (e) { fail("moveFunds DEPOSIT [sim]", e) }
+
+  try {
+    const { executeTrade: simBuy } = await import("../src/actions/trading.js")
+    const result = await simBuy("AAPL", "BUY", 300)
+    if (!result.simulated) throw new Error("expected simulated=true")
+    const state = await loadSimState()
+    if (state.holdings.length === 0) throw new Error("no holdings after BUY")
+    pass("executeTrade('AAPL','BUY',300) [sim]", `holdings=${state.holdings.length}, balance=$${state.balance.toFixed(2)}`)
+  } catch (e) { fail("executeTrade BUY [sim]", e) }
+
+  try {
+    const { getStockPortfolio: getSimPortfolio } = await import("../src/actions/portfolio.js")
+    const holdings = await getSimPortfolio()
+    if (holdings.length === 0) throw new Error("expected AAPL holding")
+    pass("getStockPortfolio() [sim]", `${holdings.length} holdings, first=${holdings[0].symbol}`)
+  } catch (e) { fail("getStockPortfolio() [sim]", e) }
+
+  try {
+    const { getTransactionHistory: getSimHistory } = await import("../src/actions/history.js")
+    const txs = await getSimHistory()
+    if (txs.length === 0) throw new Error("expected transactions")
+    pass("getTransactionHistory() [sim]", `${txs.length} transactions, status=${txs[0].status}`)
+  } catch (e) { fail("getTransactionHistory() [sim]", e) }
+
+  process.env.SIM_MODE = ""
 
   // ── Summary ─────────────────────────────────────────────────────────────
   console.log("\n" + chalk.dim("  " + "═".repeat(50)))
