@@ -57,10 +57,21 @@ export function computeAvgPricesFromTransactions(
   return result
 }
 
-/** Fetches all trade transactions and returns weighted avg cost per symbol. */
+const PAGE_SIZE = 100
+
+/** Fetches ALL trade transactions (paginated) and returns weighted avg cost per symbol. */
 export async function computeAvgPrices(): Promise<Record<string, number>> {
-  const res = await wallbitApi.getTransactions({ type: "TRADE", limit: 1000 })
-  return computeAvgPricesFromTransactions(res.data ?? [])
+  const firstPage = await wallbitApi.getTransactions({ type: "TRADE", limit: PAGE_SIZE, page: 0 })
+  const allTransactions = [...(firstPage.data ?? [])]
+  const total = firstPage.total ?? 0
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  for (let page = 1; page < totalPages; page++) {
+    const res = await wallbitApi.getTransactions({ type: "TRADE", limit: PAGE_SIZE, page })
+    allTransactions.push(...(res.data ?? []))
+  }
+
+  return computeAvgPricesFromTransactions(allTransactions)
 }
 
 export async function getTransactionHistory(

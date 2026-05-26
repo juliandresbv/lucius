@@ -83,6 +83,7 @@ export const wallbitApi = {
       from_date?: string
       to_date?: string
       limit?: number
+      page?: number
     } = {}
   ): Promise<TransactionsResponse> {
     const qs = new URLSearchParams()
@@ -90,6 +91,7 @@ export const wallbitApi = {
     if (params.from_date) qs.set("from_date", params.from_date)
     if (params.to_date) qs.set("to_date", params.to_date)
     if (params.limit) qs.set("limit", String(params.limit))
+    if (params.page !== undefined) qs.set("page", String(params.page))
     return wallbitFetch<TransactionsResponse>(`/transactions?${qs}`)
   },
 }
