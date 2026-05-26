@@ -94,32 +94,38 @@ export async function runRecommendations(): Promise<void> {
 
   if (recommendations.length === 0) return
 
-  // Let the user pick which recommendations to execute
-  const selected = await p.multiselect({
-    message: "Select recommendations to execute (Space to toggle, Enter to confirm):",
-    options: recommendations.map((r, i) => ({
-      value: String(i),
-      label: `${r.action} ${r.symbol}`,
-      hint: `$${r.amount} — ${r.rationale}`,
-    })),
-    initialValues: recommendations.map((_, i) => String(i)),
-    required: false,
-  })
-  if (p.isCancel(selected) || (selected as string[]).length === 0) return
+  const sells = recommendations.filter((r) => r.action === "SELL")
+  const buys  = recommendations.filter((r) => r.action === "BUY")
 
-  const selectedSet = new Set(selected as string[])
-  const toExecute = recommendations.filter((_, i) => selectedSet.has(String(i)))
-  const sells = toExecute.filter((r) => r.action === "SELL")
-  const buys  = toExecute.filter((r) => r.action === "BUY")
+  // When both action types are present, let the user choose which to run
+  let runSells = sells
+  let runBuys  = buys
+
+  if (sells.length > 0 && buys.length > 0) {
+    const actionOptions = [
+      { value: "sell", label: `SELL  (${sells.length} trade${sells.length > 1 ? "s" : ""})` },
+      { value: "buy",  label: `BUY   (${buys.length} trade${buys.length > 1 ? "s" : ""})` },
+    ]
+    const selected = await p.multiselect({
+      message: "Select operations to perform:",
+      options: actionOptions,
+      initialValues: ["sell", "buy"],
+      required: false,
+    })
+    if (p.isCancel(selected) || (selected as string[]).length === 0) return
+    const sel = new Set(selected as string[])
+    runSells = sel.has("sell") ? sells : []
+    runBuys  = sel.has("buy")  ? buys  : []
+  }
 
   // Phase 1: SELLs
-  for (const rec of sells) {
+  for (const rec of runSells) {
     await executeWithOverride(rec)
   }
 
   // Phase 2: BUYs with cumulative spend tracking
   let cumulativeSpent = 0
-  for (const rec of buys) {
+  for (const rec of runBuys) {
     const spent = await executeBuyWithOverride(rec, balance.available, cumulativeSpent)
     cumulativeSpent += spent
   }

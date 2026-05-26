@@ -58,18 +58,29 @@ export function buildPrompt(
           .join("\n")
       : "No current holdings"
 
-  const sellCandidates = portfolio
-    .filter((h): h is PortfolioHolding & { avgPrice: number } => h.avgPrice !== undefined)
-    .flatMap((h) => {
+  // ── sell evaluation — all holdings shown, threshold-crossers flagged ────
+  const sellLines = portfolio.map((h) => {
+    if (h.avgPrice !== undefined) {
       const gainPct = ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100
-      if (gainPct >= profile.takeProfitThreshold) {
-        return [`${h.symbol}: +${gainPct.toFixed(1)}% (above take-profit of ${profile.takeProfitThreshold}%) → SELL`]
-      }
-      if (gainPct <= -profile.stopLossThreshold) {
-        return [`${h.symbol}: ${gainPct.toFixed(1)}% (below stop-loss of ${profile.stopLossThreshold}%) → SELL`]
-      }
-      return []
-    })
+      const sign = gainPct >= 0 ? "+" : ""
+      const mandatory =
+        gainPct >= profile.takeProfitThreshold || gainPct <= -profile.stopLossThreshold
+      const tag = mandatory ? " → MUST SELL" : ""
+      return `- ${h.symbol}: ${sign}${gainPct.toFixed(1)}% vs avg cost $${h.avgPrice.toFixed(2)}${tag}`
+    }
+    return `- ${h.symbol}: cost basis unavailable — evaluate for strategic SELL`
+  })
+
+  const hasMandatory = sellLines.some((l) => l.includes("MUST SELL"))
+
+  const sellEvaluation =
+    portfolio.length === 0
+      ? "No current holdings."
+      : `${sellLines.join("\n")}\n\n${
+          hasMandatory
+            ? "You MUST recommend SELL for all holdings marked → MUST SELL."
+            : `No thresholds crossed (take-profit ${profile.takeProfitThreshold}%, stop-loss ${profile.stopLossThreshold}%). Evaluate holdings above and recommend SELL where strategically justified (e.g., overweight position, sector rebalance, better opportunity available).`
+        }`
 
   const assetsSummary = assets
     .slice(0, 10)
@@ -79,12 +90,7 @@ export function buildPrompt(
     )
     .join("\n")
 
-  const sellEvaluation =
-    sellCandidates.length > 0
-      ? `SELL CANDIDATES (holdings that have crossed a threshold — you MUST recommend SELL for these):\n${sellCandidates.map((c) => `- ${c}`).join("\n")}`
-      : `No holdings have crossed take-profit (${profile.takeProfitThreshold}%) or stop-loss (${profile.stopLossThreshold}%) thresholds.`
-
-  return `You are Vantage, an investment recommendation engine. Generate 2-3 specific investment recommendations.
+  return `You are Vantage, an investment recommendation engine. Generate specific investment recommendations including both BUY and SELL actions where appropriate.
 
 USER PROFILE:
 - Risk tolerance: ${profile.riskTolerance}
@@ -111,8 +117,8 @@ RULES:
 - Minimum $1 per trade
 - No single pick may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})
 - Only recommend BUY for assets from the AVAILABLE ASSETS list above
-- You MUST include a SELL for every SELL CANDIDATE listed above
-- You may also recommend SELL for other current holdings if strategically warranted
+- You MUST include a SELL for every holding marked → MUST SELL above
+- You SHOULD actively recommend SELL for other holdings when strategically justified
 - Match risk tolerance: conservative = stable/dividend stocks, moderate = mix, aggressive = growth
 - Prefer sectors matching the user's interests
 

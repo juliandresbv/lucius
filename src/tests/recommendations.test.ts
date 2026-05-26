@@ -126,15 +126,22 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("avg cost $180.00")
   })
 
-  it("flags SELL CANDIDATES when holding exceeds take-profit threshold", () => {
+  it("flags MUST SELL when holding exceeds take-profit threshold", () => {
     const portfolioWithAvg: PortfolioHolding[] = [
       { symbol: "AAPL", shares: 2, currentPrice: 216, value: 432, avgPrice: 180 },
     ]
     // takeProfitThreshold is 20, gainPct is exactly 20% → should flag
     const prompt = buildPrompt(profile, portfolioWithAvg, balance, assets, 300)
-    expect(prompt).toContain("SELL CANDIDATES")
+    expect(prompt).toContain("MUST SELL")
     expect(prompt).toContain("AAPL")
-    expect(prompt).toContain("MUST recommend SELL")
+  })
+
+  it("includes all holdings in sell evaluation even without avgPrice", () => {
+    const prompt = buildPrompt(profile, portfolio, balance, assets, 300)
+    // portfolio has AAPL with no avgPrice — should still appear for strategic evaluation
+    expect(prompt).toContain("SELL EVALUATION")
+    expect(prompt).toContain("AAPL")
+    expect(prompt).toContain("cost basis unavailable")
   })
 
 })
