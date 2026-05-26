@@ -4,6 +4,7 @@ import { loadProfile } from "../storage/profile.js"
 import { WallbitError } from "../wallbit/types.js"
 import { isSimMode, loadSimState } from "../storage/sim-state.js"
 import { getAssetDetail } from "./assets.js"
+import { computeAvgPrices } from "./history.js"
 
 export interface CheckingBalance {
   available: number
@@ -54,9 +55,13 @@ export async function getStockPortfolio(): Promise<PortfolioHolding[]> {
       })
     )
   }
-  const res = await wallbitApi.getStockPortfolio()
+  const [res, avgPrices] = await Promise.all([
+    wallbitApi.getStockPortfolio(),
+    computeAvgPrices().catch(() => ({} as Record<string, number>)),
+  ])
   return (res.holdings ?? []).map((h) => ({
     symbol: h.symbol, shares: h.shares, currentPrice: h.currentPrice, value: h.value, name: h.name,
+    avgPrice: avgPrices[h.symbol],
   }))
 }
 
