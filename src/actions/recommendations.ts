@@ -92,7 +92,7 @@ Respond ONLY with a JSON array (no markdown, no explanation):
 [{"symbol":"AAPL","action":"BUY","amount":200,"rationale":"Brief rationale in plain language"}]`
 }
 
-function parseRecommendations(
+export function parseRecommendations(
   text: string,
   availableBalance: number,
   monthlyBudget: number
