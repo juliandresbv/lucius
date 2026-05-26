@@ -157,7 +157,7 @@ async function dispatch(
         getStockPortfolio(),
         searchAssets(profile.sectors[0] ?? "Technology", 10),
       ])
-      const recs = await getRecommendations(profile, holdings, currentBalance, assets)
+      const recs = await getRecommendations(profile, holdings, currentBalance, assets, profile.monthlyBudget)
       renderVantage(recs, currentBalance.available, profile.monthlyBudget)
       return recs
     }
