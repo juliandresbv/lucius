@@ -42,7 +42,7 @@ export async function runRecommendations(): Promise<void> {
     message: `How much do you want to invest today? (USD, max $${balance.available.toFixed(2)})`,
     placeholder: profile.monthlyBudget > 0 ? String(profile.monthlyBudget) : "0",
     validate: (v) => {
-      const n = parseFloat(v)
+      const n = parseFloat(v ?? "")
       if (isNaN(n) || n <= 0) return "Must be a positive number"
       if (n > balance.available)
         return `Cannot exceed available balance ($${balance.available.toFixed(2)})`
@@ -184,7 +184,7 @@ async function executeWithOverride(rec: Recommendation): Promise<void> {
         message: `New amount for SELL ${rec.symbol} (USD, min $1)`,
         initialValue: String(currentAmount),
         validate: (v) => {
-          const n = parseFloat(v)
+          const n = parseFloat(v ?? "")
           if (isNaN(n) || n < 1) return "Must be at least $1"
           return undefined
         },
@@ -255,7 +255,7 @@ async function executeBuyWithOverride(
         message: `New amount for BUY ${rec.symbol} (USD, min $1, max $${remaining.toFixed(2)})`,
         initialValue: String(currentAmount),
         validate: (v) => {
-          const n = parseFloat(v)
+          const n = parseFloat(v ?? "")
           if (isNaN(n) || n < 1) return "Must be at least $1"
           if (n > remaining)
             return `Cannot exceed remaining budget ($${remaining.toFixed(2)})`

@@ -8,7 +8,7 @@ export async function setSimBalance(): Promise<void> {
     message: "New starting balance (USD)",
     placeholder: "0",
     validate: (v) => {
-      const n = parseFloat(v)
+      const n = parseFloat(v ?? "")
       if (isNaN(n) || n <= 0) return "Must be a positive number"
       return undefined
     },

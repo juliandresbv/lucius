@@ -93,7 +93,7 @@ export async function runPatchProfile(): Promise<void> {
           message: "How much would you like to invest per month? (USD)",
           placeholder: String(profile.monthlyBudget),
           validate: (v) => {
-            const n = parseFloat(v)
+            const n = parseFloat(v ?? "")
             if (isNaN(n) || n <= 0) return "Must be a positive number"
             return undefined
           },
@@ -160,7 +160,7 @@ export async function runPatchProfile(): Promise<void> {
           const customTP = await p.text({
             message: "Take-profit threshold (%)",
             validate: (v) => {
-              const n = parseFloat(v)
+              const n = parseFloat(v ?? "")
               if (isNaN(n) || n <= 0 || n > 1000) return "Must be between 1 and 1000"
               return undefined
             },
@@ -195,7 +195,7 @@ export async function runPatchProfile(): Promise<void> {
           const customSL = await p.text({
             message: "Stop-loss threshold (%)",
             validate: (v) => {
-              const n = parseFloat(v)
+              const n = parseFloat(v ?? "")
               if (isNaN(n) || n <= 0 || n > 100) return "Must be between 1 and 100"
               return undefined
             },

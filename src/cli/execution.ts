@@ -29,7 +29,7 @@ export async function runMoveFunds(): Promise<void> {
     message: "Amount (USD)",
     placeholder: lastAmount,
     validate: (v) => {
-      const n = parseFloat(v)
+      const n = parseFloat(v ?? "")
       if (isNaN(n) || n <= 0) return "Must be a positive number"
       return undefined
     },
