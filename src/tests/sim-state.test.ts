@@ -7,6 +7,7 @@ vi.mock("node:fs/promises", () => ({
 }))
 
 describe("isSimMode", () => {
+  beforeEach(() => { vi.resetModules() })
   afterEach(() => { delete process.env.SIM_MODE })
 
   it("returns false by default", async () => {
@@ -22,11 +23,11 @@ describe("isSimMode", () => {
 })
 
 describe("loadSimState", () => {
-  beforeEach(() => { vi.clearAllMocks(); delete process.env.SIM_BALANCE })
+  beforeEach(() => { vi.resetModules(); vi.clearAllMocks(); delete process.env.SIM_BALANCE })
 
   it("auto-creates fresh state when file does not exist", async () => {
     const { readFile, writeFile } = await import("node:fs/promises")
-    vi.mocked(readFile).mockRejectedValueOnce(new Error("ENOENT"))
+    vi.mocked(readFile).mockRejectedValueOnce(Object.assign(new Error("ENOENT: no such file"), { code: "ENOENT" }))
     vi.mocked(writeFile).mockResolvedValueOnce(undefined)
 
     const { loadSimState } = await import("../storage/sim-state.js")
@@ -57,7 +58,7 @@ describe("loadSimState", () => {
 })
 
 describe("resetSimState", () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => { vi.resetModules(); vi.clearAllMocks() })
 
   it("resets balance to stored initialBalance, clears holdings and transactions", async () => {
     const { readFile, writeFile } = await import("node:fs/promises")
@@ -80,8 +81,9 @@ describe("resetSimState", () => {
 
   it("resets to a new initialBalance when amount given", async () => {
     const { readFile, writeFile } = await import("node:fs/promises")
-    vi.mocked(readFile).mockRejectedValueOnce(new Error("ENOENT"))
-    vi.mocked(writeFile).mockResolvedValue(undefined)
+    vi.mocked(readFile).mockRejectedValueOnce(Object.assign(new Error("ENOENT: no such file"), { code: "ENOENT" }))
+    vi.mocked(writeFile).mockResolvedValueOnce(undefined) // saveSimState from loadSimState (ENOENT path)
+    vi.mocked(writeFile).mockResolvedValueOnce(undefined) // saveSimState from resetSimState
 
     const { resetSimState } = await import("../storage/sim-state.js")
     const fresh = await resetSimState(5000)

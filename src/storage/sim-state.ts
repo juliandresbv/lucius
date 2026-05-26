@@ -48,8 +48,13 @@ function createFreshState(initialBalance: number): SimState {
 export async function loadSimState(): Promise<SimState> {
   try {
     const data = await readFile(getSimStatePath(), "utf-8")
-    return JSON.parse(data) as SimState
-  } catch {
+    const parsed = JSON.parse(data) as SimState
+    if (typeof parsed.balance !== "number" || !Array.isArray(parsed.holdings)) {
+      throw new Error("Corrupted sim-state.json: unexpected schema")
+    }
+    return parsed
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err
     const fresh = createFreshState(DEFAULT_BALANCE())
     await saveSimState(fresh)
     return fresh
@@ -57,8 +62,8 @@ export async function loadSimState(): Promise<SimState> {
 }
 
 export async function saveSimState(state: SimState): Promise<void> {
-  state.updatedAt = new Date().toISOString()
-  await writeFile(getSimStatePath(), JSON.stringify(state, null, 2), "utf-8")
+  const toWrite = { ...state, updatedAt: new Date().toISOString() }
+  await writeFile(getSimStatePath(), JSON.stringify(toWrite, null, 2), "utf-8")
 }
 
 export async function resetSimState(initialBalance?: number): Promise<SimState> {
