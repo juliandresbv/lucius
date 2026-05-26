@@ -20,31 +20,43 @@ export function renderPortfolio(
     console.log(chalk.dim("  No stock holdings yet."))
   } else {
     const totalValue = holdings.reduce((sum, h) => sum + h.value, 0)
-    console.log(chalk.dim("  Symbol   Shares   Price         Value"))
-    console.log(chalk.dim("  ────────────────────────────────────────────"))
+    const showAvg = holdings.some((h) => h.avgPrice !== undefined && h.avgPrice > 0)
+
+    const header = showAvg
+      ? "  Symbol   Shares   Price         Value         Avg           P&L"
+      : "  Symbol   Shares   Price         Value"
+    const divider = showAvg
+      ? "  " + "─".repeat(64)
+      : "  " + "─".repeat(42)
+
+    console.log(chalk.dim(header))
+    console.log(chalk.dim(divider))
+
     for (const h of holdings) {
       const symbol = h.symbol.padEnd(9)
       const shares = h.shares.toFixed(2).padEnd(9)
       const price = `$${h.currentPrice.toFixed(2)}`.padEnd(14)
       const value = `$${h.value.toFixed(2)}`
-      console.log(
-        `  ${chalk.cyan(symbol)}${shares}${price}${chalk.bold(value)}`
-      )
 
+      if (!showAvg) {
+        console.log(`  ${chalk.cyan(symbol)}${shares}${price}${chalk.bold(value)}`)
+        continue
+      }
+
+      const valuePadded = value.padEnd(14)
       if (h.avgPrice !== undefined && h.avgPrice > 0) {
-        const avgCostValue = `$${h.avgPrice.toFixed(2)}`
-        const gainLoss = h.currentPrice - h.avgPrice
-        const gainLossPercent = (gainLoss / h.avgPrice) * 100
-        const isGain = gainLossPercent >= 0
-        const sign = isGain ? "+" : ""
-        const pnlColor = isGain ? chalk.green : chalk.red
-
-        console.log(
-          `    ${chalk.dim("avg")} ${avgCostValue}  ${pnlColor(`${sign}${gainLossPercent.toFixed(1)}%`)}`
-        )
+        const avg = `$${h.avgPrice.toFixed(2)}`.padEnd(14)
+        const gainPct = ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100
+        const isGain = gainPct >= 0
+        const pnl = `${isGain ? "+" : ""}${gainPct.toFixed(1)}%`
+        const pnlColored = isGain ? chalk.green(pnl) : chalk.red(pnl)
+        console.log(`  ${chalk.cyan(symbol)}${shares}${price}${chalk.bold(valuePadded)}${avg}${pnlColored}`)
+      } else {
+        console.log(`  ${chalk.cyan(symbol)}${shares}${price}${chalk.bold(valuePadded)}${chalk.dim("—             —")}`)
       }
     }
-    console.log(chalk.dim("  ────────────────────────────────────────────"))
+
+    console.log(chalk.dim(divider))
     console.log(
       `  ${chalk.dim("Total invested:")}    ${chalk.bold.green(`$${totalValue.toFixed(2)}`)}`
     )
