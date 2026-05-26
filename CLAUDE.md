@@ -9,7 +9,7 @@ TypeScript CLI investment advisor. Backend: Wallbit brokerage API. AI: Claude So
 ```bash
 npm start           # run the app
 npm run dev         # run with tsx watch (auto-reload)
-npm test            # vitest run (all tests, expect 54 passing)
+npm test            # vitest run (all tests, expect 68 passing)
 npm run test:watch  # vitest in watch mode
 npm run e2e         # QA dry-run (DRY_RUN=true, no real trades)
 npx tsc --noEmit    # type check only
@@ -50,6 +50,7 @@ src/index.ts
 | `src/actions/recommendations.ts` | `getRecommendations(profile, holdings, balance, assets, budget)` |
 | `src/actions/history.ts` | `getTransactionHistory(from?, to?, type?)` |
 | `src/display/agents.ts` | `renderVantage`, `renderSentinel`, `renderMeridian` — chalk output only |
+| `src/display/portfolio.ts` | Portfolio table renderer with avg price and P&L columns |
 | `src/storage/profile.ts` | `loadProfile`, `saveProfile`, `patchProfile` — reads/writes `profile.json` |
 | `src/storage/sim-state.ts` | Simulation state: virtual balance in `sim-state.json` |
 | `src/wallbit/client.ts` | Wallbit HTTP client (base URL, auth header) |
@@ -62,7 +63,7 @@ src/index.ts
 
 **Framework:** vitest  
 **Test files:** `src/tests/*.test.ts`  
-**Expected count:** 54 passing
+**Expected count:** 68 passing
 
 ```bash
 npm test            # run all
@@ -85,6 +86,7 @@ npx vitest run src/tests/guard.test.ts  # run one file
 | `ANTHROPIC_API_KEY` | ✅ | Claude API (Sonnet + Haiku) |
 | `DRY_RUN` | — | `true` = simulate all trades, no real money moves |
 | `SIM_MODE` | — | `true` = paper-trading mode with virtual balance |
+| `SIM_BALANCE` | — | Starting balance in USD for a fresh simulation state (default: `0`) |
 | `PROFILE_FILE` | — | Override profile path (default: `profile.json`) |
 | `SIM_STATE_FILE` | — | Override sim-state path (default: `sim-state.json`) |
 
@@ -134,7 +136,7 @@ type GuardResult =
 
 ## TypeScript
 
-- `strict: true`, `module: NodeNext`, `moduleResolution: NodeNext`
+- `strict: true`, `module: NodeNext`, `moduleResolution: NodeNext`, `types: ["node"]`
 - All imports inside `src/` use `.js` extensions (required for NodeNext ESM)
 - Use `import type` for type-only imports
 - `tsconfig.json` covers `src/**/*` only; `e2e/` runs via `tsx` directly

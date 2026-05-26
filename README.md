@@ -59,13 +59,13 @@ On first run, Lucius will walk you through a quick onboarding to set your invest
   AI-powered investment advisor
 
   What would you like to do?
-  ❯ 1. View portfolio
+  ❯ L. Talk to Lucius
+    1. View portfolio
     2. Get recommendations
     3. Long-term outlook
-    4. Move funds
+    4. Manage funds
     5. Transaction history
     6. Investment profile
-    L. Talk to Lucius
     Exit
 ```
 
@@ -88,7 +88,7 @@ Type `exit` to return to the menu.
 
 ```bash
 npm run dev        # tsx watch — reloads on file change
-npm test           # vitest run (54 tests)
+npm test           # vitest run (68 tests)
 npm run test:watch # vitest watch mode
 npm run e2e        # dry-run QA script (no real trades)
 ```
@@ -99,6 +99,7 @@ npm run e2e        # dry-run QA script (no real trades)
 |----------|---------|--------|
 | `DRY_RUN=true` | `false` | All trade calls are simulated; no real money moves |
 | `SIM_MODE=true` | `false` | Uses a virtual paper-trading balance from `sim-state.json` |
+| `SIM_BALANCE` | `0` | Starting balance in USD for a fresh simulation state |
 | `PROFILE_FILE` | `profile.json` | Override the profile path (used by tests: `profile.test.json`) |
 | `SIM_STATE_FILE` | `sim-state.json` | Override the sim-state path |
 
