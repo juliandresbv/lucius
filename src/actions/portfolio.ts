@@ -16,6 +16,7 @@ export interface PortfolioHolding {
   currentPrice: number
   value: number
   name?: string
+  avgPrice?: number  // available in sim mode; undefined for real Wallbit holdings
 }
 
 export interface RoboPortfolio {
@@ -49,7 +50,7 @@ export async function getStockPortfolio(): Promise<PortfolioHolding[]> {
       sim.holdings.map(async (h) => {
         const detail = await getAssetDetail(h.symbol).catch(() => null)
         const currentPrice = detail?.price ?? h.avgPrice
-        return { symbol: h.symbol, shares: h.shares, currentPrice, value: h.shares * currentPrice }
+        return { symbol: h.symbol, shares: h.shares, currentPrice, value: h.shares * currentPrice, avgPrice: h.avgPrice }
       })
     )
   }

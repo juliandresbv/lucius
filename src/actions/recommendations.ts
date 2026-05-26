@@ -46,12 +46,30 @@ export function buildPrompt(
   const holdingsSummary =
     portfolio.length > 0
       ? portfolio
-          .map(
-            (h) =>
-              `${h.symbol}: ${h.shares} shares @ $${h.currentPrice} = $${h.value}`
-          )
+          .map((h) => {
+            const base = `${h.symbol}: ${h.shares} shares @ $${h.currentPrice} = $${h.value}`
+            if (h.avgPrice !== undefined) {
+              const gainPct = ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100
+              const sign = gainPct >= 0 ? "+" : ""
+              return `${base} (avg cost $${h.avgPrice.toFixed(2)}, ${sign}${gainPct.toFixed(1)}%)`
+            }
+            return base
+          })
           .join("\n")
       : "No current holdings"
+
+  const sellCandidates = portfolio
+    .filter((h): h is PortfolioHolding & { avgPrice: number } => h.avgPrice !== undefined)
+    .flatMap((h) => {
+      const gainPct = ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100
+      if (gainPct >= profile.takeProfitThreshold) {
+        return [`${h.symbol}: +${gainPct.toFixed(1)}% (above take-profit of ${profile.takeProfitThreshold}%) → SELL`]
+      }
+      if (gainPct <= -profile.stopLossThreshold) {
+        return [`${h.symbol}: ${gainPct.toFixed(1)}% (below stop-loss of ${profile.stopLossThreshold}%) → SELL`]
+      }
+      return []
+    })
 
   const assetsSummary = assets
     .slice(0, 10)
@@ -60,6 +78,11 @@ export function buildPrompt(
         `${a.symbol} (${a.name}): $${a.price}${a.dividendYield ? `, yield: ${a.dividendYield}%` : ""}`
     )
     .join("\n")
+
+  const sellEvaluation =
+    sellCandidates.length > 0
+      ? `SELL CANDIDATES (holdings that have crossed a threshold — you MUST recommend SELL for these):\n${sellCandidates.map((c) => `- ${c}`).join("\n")}`
+      : `No holdings have crossed take-profit (${profile.takeProfitThreshold}%) or stop-loss (${profile.stopLossThreshold}%) thresholds.`
 
   return `You are Vantage, an investment recommendation engine. Generate 2-3 specific investment recommendations.
 
@@ -80,12 +103,16 @@ SESSION BUDGET: $${sessionBudget}
 AVAILABLE ASSETS:
 ${assetsSummary}
 
+SELL EVALUATION:
+${sellEvaluation}
+
 RULES:
 - Total of all BUY recommendations must not exceed $${sessionBudget}
 - Minimum $1 per trade
 - No single pick may exceed 60% of the session budget ($${Math.floor(sessionBudget * 0.6)})
 - Only recommend BUY for assets from the AVAILABLE ASSETS list above
-- You may recommend SELL for assets the user currently holds (see CURRENT PORTFOLIO)
+- You MUST include a SELL for every SELL CANDIDATE listed above
+- You may also recommend SELL for other current holdings if strategically warranted
 - Match risk tolerance: conservative = stable/dividend stocks, moderate = mix, aggressive = growth
 - Prefer sectors matching the user's interests
 

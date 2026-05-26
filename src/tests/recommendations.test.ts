@@ -116,4 +116,24 @@ describe("buildPrompt", () => {
     const prompt = buildPrompt(profile, portfolio, balance, assets, 300)
     expect(prompt).toContain("$1")
   })
+
+  it("includes gain/loss % in holdings summary when avgPrice is present", () => {
+    const portfolioWithAvg: PortfolioHolding[] = [
+      { symbol: "AAPL", shares: 2, currentPrice: 216, value: 432, avgPrice: 180 },
+    ]
+    const prompt = buildPrompt(profile, portfolioWithAvg, balance, assets, 300)
+    expect(prompt).toContain("+20.0%")
+    expect(prompt).toContain("avg cost $180.00")
+  })
+
+  it("flags SELL CANDIDATES when holding exceeds take-profit threshold", () => {
+    const portfolioWithAvg: PortfolioHolding[] = [
+      { symbol: "AAPL", shares: 2, currentPrice: 216, value: 432, avgPrice: 180 },
+    ]
+    // takeProfitThreshold is 20, gainPct is exactly 20% → should flag
+    const prompt = buildPrompt(profile, portfolioWithAvg, balance, assets, 300)
+    expect(prompt).toContain("SELL CANDIDATES")
+    expect(prompt).toContain("AAPL")
+    expect(prompt).toContain("MUST recommend SELL")
+  })
 })
