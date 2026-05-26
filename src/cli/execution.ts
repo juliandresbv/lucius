@@ -9,7 +9,7 @@ import type { SentinelPreview } from "../actions/trading.js"
 
 export async function runMoveFunds(): Promise<void> {
   const directionChoice = await p.select({
-    message: "Which operation?",
+    message: "Which operation? (↑↓ · Enter)",
     options: [
       { value: "DEPOSIT", label: "Deposit funds" },
       { value: "WITHDRAWAL", label: "Withdraw funds" },
@@ -72,7 +72,7 @@ export async function runMoveFunds(): Promise<void> {
   renderSentinel(preview)
 
   const confirm = await p.confirm({
-    message: `Confirm ${direction.toLowerCase()} of $${amount}?`,
+    message: `Confirm ${direction.toLowerCase()} of $${amount}? (Y/N · Enter)`,
     initialValue: false,
   })
   if (p.isCancel(confirm) || !confirm) return

@@ -26,7 +26,7 @@ export async function resetSim(): Promise<void> {
   const bal = sim.initialBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   const confirm = await p.confirm({
-    message: `Reset simulation to $${bal}? This clears all holdings and transactions.`,
+    message: `Reset simulation to $${bal}? This clears all holdings and transactions. (Y/N · Enter)`,
     initialValue: false,
   })
   if (p.isCancel(confirm) || !confirm) return
@@ -75,7 +75,7 @@ function computeDelta(t: SimTransaction): number {
 
 export async function runSimMenu(): Promise<void> {
   const action = await p.select({
-    message: "Simulation actions",
+    message: "Simulation actions (↑↓ · Enter)",
     options: [
       {
         value: "balance",

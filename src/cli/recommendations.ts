@@ -157,7 +157,7 @@ async function executeWithOverride(rec: Recommendation): Promise<void> {
 
     if (preview.warnings.length > 0) {
       const proceed = await p.confirm({
-        message: "Sentinel flagged warnings. Proceed anyway?",
+        message: "Sentinel flagged warnings. Proceed anyway? (Y/N · Enter)",
         initialValue: false,
       })
       if (p.isCancel(proceed) || !proceed) {
@@ -168,7 +168,7 @@ async function executeWithOverride(rec: Recommendation): Promise<void> {
 
     const fullLabel = rec.isFullPosition && currentAmount === rec.amount ? " (full position)" : ""
     const choice = await p.select({
-      message: `Execute SELL ${rec.symbol} $${currentAmount}${fullLabel}?`,
+      message: `Execute SELL ${rec.symbol} $${currentAmount}${fullLabel}? (↑↓ · Enter)`,
       options: [
         { value: "yes", label: "Yes" },
         { value: "no", label: "No" },
@@ -228,7 +228,7 @@ async function executeBuyWithOverride(
 
     if (preview.warnings.length > 0) {
       const proceed = await p.confirm({
-        message: "Sentinel flagged warnings. Proceed anyway?",
+        message: "Sentinel flagged warnings. Proceed anyway? (Y/N · Enter)",
         initialValue: false,
       })
       if (p.isCancel(proceed) || !proceed) {
@@ -238,7 +238,7 @@ async function executeBuyWithOverride(
     }
 
     const choice = await p.select({
-      message: `Execute BUY ${rec.symbol} $${currentAmount}?`,
+      message: `Execute BUY ${rec.symbol} $${currentAmount}? (↑↓ · Enter)`,
       options: [
         { value: "yes", label: "Yes" },
         { value: "no", label: "No" },

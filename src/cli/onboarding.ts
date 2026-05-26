@@ -28,7 +28,7 @@ export async function runOnboarding(): Promise<UserProfile> {
 
   // Step 1 — Risk tolerance
   const riskTolerance = await p.select({
-    message: "How would you describe your approach to risk?",
+    message: "How would you describe your approach to risk? (↑↓ · Enter)",
     options: [
       {
         value: "conservative",
@@ -64,7 +64,7 @@ export async function runOnboarding(): Promise<UserProfile> {
 
   // Step 3 — Time horizon
   const timeHorizon = await p.select({
-    message: "When do you expect to need this money?",
+    message: "When do you expect to need this money? (↑↓ · Enter)",
     options: [
       { value: "short", label: "Short term", hint: "Within 2 years" },
       { value: "medium", label: "Medium term", hint: "2 to 7 years" },
@@ -83,7 +83,7 @@ export async function runOnboarding(): Promise<UserProfile> {
 
   // Step 5 — Take profit
   const takeProfitChoice = await p.select({
-    message: "At what % gain would you want to consider selling?",
+    message: "At what % gain would you want to consider selling? (↑↓ · Enter)",
     options: [
       { value: "10", label: "10%", hint: "Take profits early" },
       { value: "20", label: "20%", hint: "Standard target (recommended)" },
@@ -111,7 +111,7 @@ export async function runOnboarding(): Promise<UserProfile> {
 
   // Step 6 — Stop loss
   const stopLossChoice = await p.select({
-    message: "At what % loss would you want Sentinel to flag a position?",
+    message: "At what % loss would you want Sentinel to flag a position? (↑↓ · Enter)",
     options: [
       { value: "10", label: "10%", hint: "Protective" },
       { value: "15", label: "15%", hint: "Balanced (recommended)" },
