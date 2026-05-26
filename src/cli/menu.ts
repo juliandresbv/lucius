@@ -20,13 +20,7 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
       { value: "history", label: "5. Transaction history" },
       { value: "profile", label: "6. Update profile" },
       { value: "lucius", label: "L. Talk to Lucius" },
-      ...(isSimMode()
-        ? [
-            { value: "__sep__", label: chalk.dim("──────────────────") },
-            { value: "sim",     label: "⚡  Simulation actions" },
-            { value: "__sep__", label: chalk.dim("──────────────────") },
-          ]
-        : []),
+      ...(isSimMode() ? [{ value: "sim", label: "⚡  Simulation actions" }] : []),
       { value: "exit", label: "Exit" },
     ]
 
@@ -56,8 +50,6 @@ export async function showMainMenu(): Promise<"lucius" | "exit"> {
         break
       case "profile":
         await runOnboarding()
-        break
-      case "__sep__":
         break
       case "sim":
         await runSimMenu()
