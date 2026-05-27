@@ -1,0 +1,10 @@
+[extend]
+# Use gitleaks default ruleset as base
+useDefault = true
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''.env.example''',        # placeholders only — never real values
+  '''\.gitleaks\.toml''',
+]
