@@ -57,7 +57,7 @@ export function computeAvgPricesFromTransactions(
   return result
 }
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 50
 
 /** Fetches ALL trade transactions (paginated) and returns weighted avg cost per symbol. */
 export async function computeAvgPrices(): Promise<Record<string, number>> {

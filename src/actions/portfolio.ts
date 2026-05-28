@@ -1,7 +1,6 @@
 // src/actions/portfolio.ts
 import { wallbitApi } from "../wallbit/api.js"
 import { loadProfile } from "../storage/profile.js"
-import { WallbitError } from "../wallbit/types.js"
 import { isSimMode, loadSimState } from "../storage/sim-state.js"
 import { getAssetDetail } from "./assets.js"
 import { computeAvgPrices } from "./history.js"
@@ -18,13 +17,6 @@ export interface PortfolioHolding {
   value: number
   name?: string
   avgPrice?: number  // available in sim mode; undefined for real Wallbit holdings
-}
-
-export interface RoboPortfolio {
-  chests: { name: string; balance: number; allocation: number }[]
-  totalBalance: number
-  dailyVariation: number
-  allocation: Record<string, number>
 }
 
 export interface PortfolioProjection {
@@ -63,24 +55,6 @@ export async function getStockPortfolio(): Promise<PortfolioHolding[]> {
     symbol: h.symbol, shares: h.shares, currentPrice: h.currentPrice, value: h.value, name: h.name,
     avgPrice: avgPrices[h.symbol],
   }))
-}
-
-export async function getRoboAdvisorPortfolio(): Promise<RoboPortfolio | null> {
-  try {
-    const res = await wallbitApi.getRoboAdvisorBalance()
-    return {
-      chests: res.chests ?? [],
-      totalBalance: res.totalBalance,
-      dailyVariation: res.dailyVariation,
-      allocation: res.allocation ?? {},
-    }
-  } catch (err) {
-    // Endpoint requires funded robo account — return null gracefully
-    if (err instanceof WallbitError && (err.code === 403 || err.code === 404)) {
-      return null
-    }
-    throw err
-  }
 }
 
 export async function getPortfolioProjection(): Promise<PortfolioProjection> {

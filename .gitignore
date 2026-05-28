@@ -1,6 +1,15 @@
+# Node modules and build artifacts
 node_modules/
 dist/
+
+# Environment variables
 .env
+
+# Local data
 profile.json
 profile.test.json
+sim-state.json
+sim-state.test.json
+
+# Log files
 *.log

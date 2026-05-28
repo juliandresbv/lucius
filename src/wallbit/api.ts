@@ -3,7 +3,6 @@ import { wallbitFetch } from "./client.js"
 import type {
   CheckingBalanceResponse,
   StockPortfolioResponse,
-  RoboAdvisorResponse,
   AssetsResponse,
   AssetDetail,
   FeeResponse,
@@ -21,10 +20,6 @@ export const wallbitApi = {
 
   async getStockPortfolio(): Promise<StockPortfolioResponse> {
     return wallbitFetch<StockPortfolioResponse>("/balance/stocks")
-  },
-
-  async getRoboAdvisorBalance(): Promise<RoboAdvisorResponse> {
-    return wallbitFetch<RoboAdvisorResponse>("/roboadvisor/balance")
   },
 
   async getAssets(

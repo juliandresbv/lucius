@@ -18,19 +18,6 @@ export interface StockPortfolioResponse {
   totalValue: number
 }
 
-export interface RoboChest {
-  name: string
-  balance: number
-  allocation: number
-}
-
-export interface RoboAdvisorResponse {
-  chests: RoboChest[]
-  totalBalance: number
-  dailyVariation: number
-  allocation: Record<string, number>
-}
-
 export interface Asset {
   symbol: string
   name: string
