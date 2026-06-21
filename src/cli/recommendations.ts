@@ -120,94 +120,27 @@ export async function runRecommendations(): Promise<void> {
 
   // Phase 1: SELLs
   for (const rec of runSells) {
-    await executeWithOverride(rec)
+    await executeWithOverride(rec, "SELL")
   }
 
   // Phase 2: BUYs with cumulative spend tracking
   let cumulativeSpent = 0
   for (const rec of runBuys) {
-    const spent = await executeBuyWithOverride(rec, balance.available, cumulativeSpent)
-    cumulativeSpent += spent
+    const remaining = balance.available - cumulativeSpent
+    cumulativeSpent += await executeWithOverride(rec, "BUY", remaining)
   }
 }
 
-// Execute a SELL trade with Sentinel review and Yes / No / Edit override.
-async function executeWithOverride(rec: Recommendation): Promise<void> {
-  if (!Number.isFinite(rec.amount) || rec.amount <= 0) {
-    console.log(chalk.red(`  Skipping ${rec.symbol}: invalid amount.`))
-    return
-  }
-  let currentAmount = rec.amount
-
-  while (true) {
-    const previewSpinner = p.spinner()
-    previewSpinner.start(`Sentinel reviewing ${rec.symbol}...`)
-
-    let preview
-    try {
-      preview = await getSentinelPreview(rec.symbol, "SELL", currentAmount)
-      previewSpinner.stop("")
-    } catch (err) {
-      previewSpinner.stop(`Sentinel check failed for ${rec.symbol}.`)
-      console.error(chalk.red(`  Skipping ${rec.symbol}: ${(err as Error).message}`))
-      return
-    }
-
-    renderSentinel(preview)
-
-    if (preview.warnings.length > 0) {
-      const proceed = await p.confirm({
-        message: "Sentinel flagged warnings. Proceed anyway? (Y/N · Enter)",
-        initialValue: false,
-      })
-      if (p.isCancel(proceed) || !proceed) {
-        console.log(chalk.dim(`  Skipped ${rec.symbol}.`))
-        return
-      }
-    }
-
-    const fullLabel = rec.isFullPosition && currentAmount === rec.amount ? " (full position)" : ""
-    const choice = await p.select({
-      message: `Execute SELL ${rec.symbol} $${currentAmount}${fullLabel}? (↑↓ · Enter)`,
-      options: [
-        { value: "yes", label: "Yes" },
-        { value: "no", label: "No" },
-        { value: "edit", label: "Edit amount" },
-      ],
-    })
-    if (p.isCancel(choice) || choice === "no") {
-      console.log(chalk.dim(`  Skipped ${rec.symbol}.`))
-      return
-    }
-    if (choice === "edit") {
-      const newAmountStr = await p.text({
-        message: `New amount for SELL ${rec.symbol} (USD, min $1)`,
-        initialValue: String(currentAmount),
-        validate: (v) => {
-          const n = parseFloat(v ?? "")
-          if (isNaN(n) || n < 1) return "Must be at least $1"
-          return undefined
-        },
-      })
-      if (p.isCancel(newAmountStr)) {
-        console.log(chalk.dim(`  Skipped ${rec.symbol}.`))
-        return
-      }
-      currentAmount = parseFloat(newAmountStr as string)
-      continue
-    }
-    break
-  }
-
-  await runTrade(rec.symbol, "SELL", currentAmount)
-}
-
-// Execute a BUY trade with cumulative tracking. Returns amount spent (0 on skip/fail).
-async function executeBuyWithOverride(
+// Execute a BUY/SELL with Sentinel review and Yes / No / Edit override. Returns amount spent (0 on skip/fail).
+async function executeWithOverride(
   rec: Recommendation,
-  availableBalance: number,
-  cumulativeSpent: number
+  direction: "BUY" | "SELL",
+  maxAmount?: number
 ): Promise<number> {
+  if (direction === "SELL" && (!Number.isFinite(rec.amount) || rec.amount <= 0)) {
+    console.log(chalk.red(`  Skipping ${rec.symbol}: invalid amount.`))
+    return 0
+  }
   let currentAmount = rec.amount
 
   while (true) {
@@ -216,7 +149,7 @@ async function executeBuyWithOverride(
 
     let preview
     try {
-      preview = await getSentinelPreview(rec.symbol, "BUY", currentAmount)
+      preview = await getSentinelPreview(rec.symbol, direction, currentAmount)
       previewSpinner.stop("")
     } catch (err) {
       previewSpinner.stop(`Sentinel check failed for ${rec.symbol}.`)
@@ -237,8 +170,12 @@ async function executeBuyWithOverride(
       }
     }
 
+    const fullLabel =
+      direction === "SELL" && rec.isFullPosition && currentAmount === rec.amount
+        ? " (full position)"
+        : ""
     const choice = await p.select({
-      message: `Execute BUY ${rec.symbol} $${currentAmount}? (↑↓ · Enter)`,
+      message: `Execute ${direction} ${rec.symbol} $${currentAmount}${fullLabel}? (↑↓ · Enter)`,
       options: [
         { value: "yes", label: "Yes" },
         { value: "no", label: "No" },
@@ -250,15 +187,17 @@ async function executeBuyWithOverride(
       return 0
     }
     if (choice === "edit") {
-      const remaining = availableBalance - cumulativeSpent
       const newAmountStr = await p.text({
-        message: `New amount for BUY ${rec.symbol} (USD, min $1, max $${remaining.toFixed(2)})`,
+        message:
+          maxAmount !== undefined
+            ? `New amount for ${direction} ${rec.symbol} (USD, min $1, max $${maxAmount.toFixed(2)})`
+            : `New amount for ${direction} ${rec.symbol} (USD, min $1)`,
         initialValue: String(currentAmount),
         validate: (v) => {
           const n = parseFloat(v ?? "")
           if (isNaN(n) || n < 1) return "Must be at least $1"
-          if (n > remaining)
-            return `Cannot exceed remaining budget ($${remaining.toFixed(2)})`
+          if (maxAmount !== undefined && n > maxAmount)
+            return `Cannot exceed remaining budget ($${maxAmount.toFixed(2)})`
           return undefined
         },
       })
@@ -272,7 +211,7 @@ async function executeBuyWithOverride(
     break
   }
 
-  const success = await runTrade(rec.symbol, "BUY", currentAmount)
+  const success = await runTrade(rec.symbol, direction, currentAmount)
   return success ? currentAmount : 0
 }
 
